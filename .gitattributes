@@ -1,0 +1,6 @@
+tests/ export-ignore
+phpunit.xml export-ignore
+assets/src/ export-ignore
+assets/less/   export-ignore
+assets/package.json export-ignore
+assets/gulpfile.babel.js export-ignore
