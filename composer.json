@@ -4,7 +4,7 @@
   "type": "wula-module",
   "require": {
 	"wula/wula-installer": "^1.0",
-	"wula/cms-support": "^1.0"
+	"wula/cms-support": "*"
   },
   "license": "MIT",
   "authors": [
