@@ -1,4 +1,13 @@
 <?php
+$tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_domain` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `is_default` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否是默认域名',
+    `is_https` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '是否启用HTTPS',
+    `domain` VARCHAR(64) NOT NULL COMMENT '域名',
+    `theme` VARCHAR(32) NOT NULL DEFAULT 'default' COMMENT '模板目录',
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `UDX_DOMAIN` (`domain` ASC)
+)  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='站点域名配置'";
 
 $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_model` (
     `id` INT NOT NULL AUTO_INCREMENT,

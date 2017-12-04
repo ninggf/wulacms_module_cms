@@ -21,7 +21,7 @@ let options = minimist(process.argv.slice(2), knownOptions);
 gulp.task('clean', [], function () {
 	console.log("Clean all files in build folder");
 	return gulp.src([
-			"css/app.css",
+			"css/*.css",
 			'js/*.js'
 		], {read: false}
 	).pipe(clean());
@@ -33,12 +33,10 @@ gulp.task('default', ['build'], function () {
 
 // 生成最终文件，并清空生成的中间文件.
 gulp.task('build', ['css', 'js'], function () {
-
 });
 
 // 编译less文件
 gulp.task('css', [], function () {
-	console.log("compile app.less.");
 	let ccss = gulp.src('less/cms.less').pipe(less()).pipe(gulp.dest('css'));
 	if (options.env === 'pro')
 		return ccss.pipe(cssmin())
@@ -47,7 +45,6 @@ gulp.task('css', [], function () {
 });
 // 编译js文件
 gulp.task('js', [], function () {
-	console.log("compile js.");
 	let js = gulp.src([
 		'src/*.js'
 	]).pipe(babel({

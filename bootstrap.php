@@ -2,10 +2,12 @@
 
 namespace cms;
 
+use cms\classes\CmsPageDispatcher;
 use dashboard\classes\DashboardUI;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
 use wulaphp\auth\AclResourceManager;
+use wulaphp\router\Router;
 
 /**
  * Class CmsModule
@@ -33,6 +35,15 @@ class CmsModule extends CmfModule {
 
 	public function getAuthor() {
 		return 'Leo Ning';
+	}
+
+	/**
+	 * @param \wulaphp\router\Router $router
+	 *
+	 * @bind router\registerDispatcher
+	 */
+	public static function regRouter(Router $router) {
+		$router->register(new CmsPageDispatcher(), 50);
 	}
 
 	/**
