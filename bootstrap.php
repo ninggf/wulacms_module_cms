@@ -2,8 +2,8 @@
 
 namespace cms;
 
+use backend\classes\DashboardUI;
 use cms\classes\CmsPageDispatcher;
-use dashboard\classes\DashboardUI;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
 use wulaphp\auth\AclResourceManager;
@@ -49,36 +49,41 @@ class CmsModule extends CmfModule {
 	/**
 	 * 初始化菜单.
 	 *
-	 * @param \dashboard\classes\DashboardUI $ui
+	 * @param \backend\classes\DashboardUI $ui
 	 *
 	 * @bind dashboard\initUI
 	 */
 	public static function initUI(DashboardUI $ui) {
 		$passport = whoami('admin');
 		if ($passport->cando('m:site')) {
-			$site = $ui->getMenu('site', '网站');
+			$site       = $ui->getMenu('site', '网站');
+			$site->icon = '&#xe617;';
 			if ($passport->cando('m:site/page')) {
-				$page       = $site->getMenu('page', '网页', 1);
-				$page->icon = 'fa fa-copy';
-				$page->url  = App::hash('~page');
+				$page              = $site->getMenu('page', '页面', 1);
+				$page->icon        = '&#xe7a0;';
+				$page->iconCls     = 'layui-icon';
+				$page->data['url'] = App::url('cms/page');
 			}
 			if ($passport->cando('m:site/block')) {
 				$page       = $site->getMenu('block', '列表', 900);
-				$page->icon = 'fa fa-list-ul';
+				$page->icon = '&#xe61a;';
 			}
 			if ($passport->cando('m:site/chunk')) {
-				$page       = $site->getMenu('chunk', '部件', 901);
-				$page->icon = 'fa fa-columns';
+				$page          = $site->getMenu('chunk', '部件', 901);
+				$page->icon    = '&#xe634;';
+				$page->iconCls = 'layui-icon';
 			}
 			if ($passport->cando('m:site/model')) {
 				$site            = $ui->getMenu('site');
 				$page            = $site->getMenu('model', '模型', 999);
-				$page->icon      = 'fa fa-suitcase';
+				$page->icon      = '&#xe705;';
+				$page->iconCls   = 'layui-icon';
 				$page->iconStyle = 'color:orange';
 			}
 			if ($passport->is('开发人员')) {
 				$page            = $site->getMenu('tpl', '模板', 2001);
-				$page->icon      = 'fa fa-html5';
+				$page->icon      = '&#xe632;';
+				$page->iconCls   = 'layui-icon';
 				$page->iconStyle = "color:orange";
 			}
 		}
