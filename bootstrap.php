@@ -3,6 +3,7 @@
 namespace cms;
 
 use backend\classes\DashboardUI;
+use cms\classes\CmsDispatcher;
 use cms\classes\CmsPageDispatcher;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
@@ -47,6 +48,16 @@ class CmsModule extends CmfModule {
 	}
 
 	/**
+	 * 注册分发器
+	 * @param \wulaphp\router\Router $router
+	 *
+	 * @bind router\registerDispatcher
+	 */
+	public static function regDispatcher($router) {
+		$router->register(new CmsDispatcher());
+	}
+
+	/**
 	 * 初始化菜单.
 	 *
 	 * @param \backend\classes\DashboardUI $ui
@@ -58,6 +69,12 @@ class CmsModule extends CmfModule {
 		if ($passport->cando('m:site')) {
 			$site       = $ui->getMenu('site', '网站');
 			$site->icon = '&#xe617;';
+			if ($passport->cando('m:site/page')) {
+				$page              = $site->getMenu('domain', '域名', 1);
+				$page->icon        = '&#xe64c;';
+				$page->iconCls     = 'layui-icon';
+				$page->data['url'] = App::url('cms/page/domain');
+			}
 			if ($passport->cando('m:site/page')) {
 				$page              = $site->getMenu('page', '页面', 1);
 				$page->icon        = '&#xe7a0;';
