@@ -29,7 +29,9 @@
 namespace cms\controllers;
 
 use backend\classes\IFramePageController;
-use cms\classes\model\CmsDomain;
+use backend\form\BootstrapFormRender;
+use cms\classes\form\CmsDomainForm;
+use wulaphp\io\Ajax;
 
 class PageController extends IFramePageController {
 
@@ -42,14 +44,11 @@ class PageController extends IFramePageController {
 	public function domain_data($type = '', $q = '', $count = '', $pager, $sort) {
 		$page      = $pager['page'];
 		$page_size = $pager['size'];
-		$model     = new CmsDomain();
+		$model     = new CmsDomainForm();
 		$where     = ['id >=' => 1];
-		if ($type) {
-			$where['type'] = $type;
-		}
 		if ($q) {
-			$where1['filename LIKE'] = '%' . $q . '%';
-			$where[]                 = $where1;
+			$where1['domain LIKE'] = '%' . $q . '%';
+			$where[]               = $where1;
 		}
 		$query = $model->select('*')->where($where)->limit(($page - 1) * $page_size, $page_size)->sort($sort['name'], $sort['dir']);
 		$rows  = $query->toArray();
@@ -63,17 +62,43 @@ class PageController extends IFramePageController {
 		return view($data);
 	}
 
-	public function edit($id) {
-		$hd = opendir ( THEME_PATH  );
-		$themes = array ();
-		if ($hd) {
-			while ( ($f = readdir ( $hd )) != false ) {
-				if ($f != '.' && $f != '..' && is_dir ( THEME_PATH  . $f )) {
-					$themes [] = $f;
-				}
-			}
-			closedir ( $hd );
+	public function edit($id = '') {
+		$form = new CmsDomainForm(true);
+		if ($id) {
+			$query  = $form->get($id);
+			$domain = $query->get(0);
+			$form->inflateByData($domain);
 		}
-		return $this->render();
+		$data['form']  = BootstrapFormRender::v($form);
+		$data['id']    = $id;
+		$data['rules'] = $form->encodeValidatorRule($this);
+
+		return view($data);
+	}
+
+	public function save_domain($id) {
+		$form = new CmsDomainForm(true);
+		$data = $form->inflate();
+		if ($id) {
+			$res = $form->updateDomain($id, $data);
+		} else {
+			$res = $form->indsertDomain($data);
+		}
+		if ($res) {
+			return Ajax::reload('#core-admin-table', $id ? '修改成功' : '新域名已经成功创建');
+		} else {
+			return Ajax::error('操作失败了');
+		}
+
+	}
+
+	public function del_domain($id) {
+		if (!$id) {
+			return Ajax::error('参数错误啦!哥!');
+		}
+		$form = new CmsDomainForm();
+		$res  = $form->delDomain($id);
+
+		return Ajax::reload('#core-admin-table', $res ? '删除成功' : '删除失败');
 	}
 }

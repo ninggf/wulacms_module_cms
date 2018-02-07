@@ -5,6 +5,7 @@ namespace cms;
 use backend\classes\DashboardUI;
 use cms\classes\CmsDispatcher;
 use cms\classes\CmsPageDispatcher;
+use cms\classes\form\CmsDomainForm;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
 use wulaphp\auth\AclResourceManager;
@@ -49,6 +50,7 @@ class CmsModule extends CmfModule {
 
 	/**
 	 * 注册分发器
+	 *
 	 * @param \wulaphp\router\Router $router
 	 *
 	 * @bind router\registerDispatcher
@@ -132,6 +134,29 @@ class CmsModule extends CmfModule {
 		$acl = $manager->getResource('site/model', '模型管理', 'm');
 		$acl->addOperate('edit', '编辑');
 		$acl->addOperate('del', '删除');
+	}
+
+	/*
+	 * get the theme  from  the domain
+	 */
+	public function get_theme() {
+		if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] && $_SERVER['HTTPS'] != 'off') {
+			$schema = 'https://';
+		} else {
+			$schema = 'http://';
+		}
+		$domain    = $schema . $_SERVER ['HTTP_HOST'];
+		$cms_table = new CmsDomainForm();
+		$theme     = $cms_table->select('theme')->where(['domain' => $domain])->get('theme');
+
+		return $theme;
+	}
+
+	/*
+	 * provide hook to template
+	*/
+	protected function bind() {
+		bind('get_theme', [$this, 'get_theme']);
 	}
 }
 

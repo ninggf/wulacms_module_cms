@@ -3,8 +3,8 @@
         <header class="bg-light header b-b clearfix">
             <div class="row m-t-sm">
                 <div class="col-sm-6 m-b-xs">
-                    <a href="{'cms/page/edit'|app}/0" class="btn btn-sm btn-success edit-admin" data-ajax="dialog"
-                       data-area="800px,400px" data-title="新的公众号">
+                    <a href="{'cms/page/edit'|app}" class="btn btn-sm btn-success edit-admin" data-ajax="dialog"
+                       data-area="500px,400px" data-title="新的域名">
                         <i class="fa fa-plus"></i> 添加域名
                     </a>
                 </div>
