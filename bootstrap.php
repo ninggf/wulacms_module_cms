@@ -78,7 +78,13 @@ class CmsModule extends CmfModule {
 				$page->data['url'] = App::url('cms/page/domain');
 			}
 			if ($passport->cando('m:site/page')) {
-				$page              = $site->getMenu('page', '页面', 1);
+				$page              = $site->getMenu('channel', '栏目', 2);
+				$page->icon        = '&#xe62a;';
+				$page->iconCls     = 'layui-icon';
+				$page->data['url'] = App::url('cms/page/channel');
+			}
+			if ($passport->cando('m:site/page')) {
+				$page              = $site->getMenu('page', '页面', 3);
 				$page->icon        = '&#xe7a0;';
 				$page->iconCls     = 'layui-icon';
 				$page->data['url'] = App::url('cms/page');
