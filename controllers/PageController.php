@@ -134,24 +134,34 @@ class PageController extends IFramePageController {
 		$page_info            = [];
 		$cms_page_model       = new CmsPage();
 		$cms_page_field_model = new CmsPageField();
+		$opath                = $post['opath'];
 		//开启事务
 		$db = \wulaphp\app\App::db();
+
 		//移动更新
 		if ($post['id']) {
-			$ppath = $post['ppath'];
-			$opath = $post['opath'];
-
+			if ($post['ppath']) {
+				$ppath = $post['ppath'];
+			} else {
+				$p     = explode('/', $opath);
+				$ar    = $p[ count($p) - 2 ];
+				$ppath = substr($opath, 0, -strlen($ar) - 1);
+			}
 			$path     = $ppath . $post['path'] . '/';
 			$up_data  = ['path' => $path, 'url' => $path . 'index.html'];
 			$up_data2 = ['update_time' => time(), 'update_uid' => $this->passport->uid, 'model' => 1, 'path' => $path, 'title' => $post['title'], 'title2' => $post['ftitle'], 'keywords' => $post['keyword'], 'description' => $post['description']];
 			$result   = $cms_page_model->updatePage($up_data, ['id' => $post['id']]);
 			$result   = $result && $cms_page_field_model->updatePageField($up_data2, ['page_id' => $post['id']]);
-			//			$p        = explode('/', $opath);
-			//			$ar       = $p[ count($p) - 2 ];
-			//			$pppath     = substr($opath, 0, -strlen($ar) - 1);
+
 			$result = $result && $cms_page_model->moveNode($path, $opath) && $cms_page_field_model->updateNode($path, $opath);
 			if ($result) {
+				$db->commit();
+
 				return Ajax::reload('', '保存成功');
+			} else {
+				$db->rollback();
+
+				return Ajax::error('保存失败');
 			}
 		}
 		if ($post['pid'] && !$post['id']) {
@@ -180,21 +190,26 @@ class PageController extends IFramePageController {
 		if (!$id) {
 			return false;
 		}
-		//		$opath  = '/b/c/efd/';
-		//		$p      = explode('/', $opath);
-		//		$o1path = $p[ count($p) - 2 ];
-		//		$path   = substr($opath, 0, -strlen($o1path) - 1);
-		//		var_dump($path);
-		//		exit;
 		$cms_page_model = new CmsPage();
-		//$a              = $cms_page_model->getChannelTree('d/c/tc/');
-		//$cms_page_model->moveNode($a['menus'][0],'la/');
-		//		var_dump($a['menus'][0]);
-		//		exit;
-		$res         = $cms_page_model->get_page($id);
-		$path        = explode('/', $res['path']);
-		$res['path'] = $path[ count($path) - 2 ];
+		$res            = $cms_page_model->get_page($id);
+		$path           = explode('/', $res['path']);
+		$res['path']    = $path[ count($path) - 2 ];
 
 		return $res;
+	}
+
+	//删除节点
+	public function del_page($id) {
+		if (!$id) {
+			return false;
+		}
+		$cms_page_model = new CmsPage();
+		$res            = $cms_page_model->delNode($id);
+		if ($res) {
+			return true;
+		} else {
+			return false;
+		}
+
 	}
 }

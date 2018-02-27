@@ -68,16 +68,16 @@ class CmsModule extends CmfModule {
 	 */
 	public static function initUI(DashboardUI $ui) {
 		$passport = whoami('admin');
-		if ($passport->cando('m:site')) {
+		if ($passport->cando('m:cms')) {
 			$site       = $ui->getMenu('site', '网站');
 			$site->icon = '&#xe617;';
-			if ($passport->cando('m:site/page')) {
+			if ($passport->cando('m:cms/page')) {
 				$page              = $site->getMenu('domain', '域名', 1);
 				$page->icon        = '&#xe64c;';
 				$page->iconCls     = 'layui-icon';
 				$page->data['url'] = App::url('cms/page/domain');
 			}
-			if ($passport->cando('m:site/page')) {
+			if ($passport->cando('m:cms/page')) {
 				$page              = $site->getMenu('channel', '栏目', 2);
 				$page->icon        = '&#xe62a;';
 				$page->iconCls     = 'layui-icon';

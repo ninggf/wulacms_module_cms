@@ -37,7 +37,7 @@ class CmsPage extends Table {
 	 * @param string   $name 菜单名称
 	 * @param int|null $pos  位置
 	 *
-	 * @return \cms\classes\Menu Menu实例的引用
+	 * @return \cms\classes\Channel Menu实例的引用
 	 */
 	public function &getMenu($id, $name = '', $url = null, $pid = 0) {
 		$ids = explode('/', trim($id, '/'));
@@ -45,7 +45,7 @@ class CmsPage extends Table {
 		if (isset ($this->menus [ $id ])) {
 			$menu = $this->menus [ $id ];
 		} else {
-			$menu                = new \cms\classes\Menu($id);
+			$menu                = new \cms\classes\Channel($id);
 			$this->menus [ $id ] = &$menu;
 		}
 		if ($ids) {
@@ -75,7 +75,7 @@ class CmsPage extends Table {
 	 */
 	public function menuData($group = false) {
 		$menus = ['menus' => []];
-		/** @var \cms\classes\Menu $menu */
+		/** @var \cms\classes\Channel $menu */
 		foreach ($this->menus as $menu) {
 			$menus['menus'][] = $menu->data($group);
 		}
@@ -131,14 +131,21 @@ class CmsPage extends Table {
 		return $this->update($data, $cond);
 	}
 
-	public function moveNode($np,$opath) {
-		$len = strlen($opath)+1;
+	public function moveNode($np, $opath) {
+		$len          = strlen($opath) + 1;
 		$data['path'] = imv("CONCAT('$np',SUBSTR(path,$len))")->noquote();
 		try {
-			$this->update($data, ['path LIKE' => $opath . '%']);
-		}catch (\Exception $e){
+			$this->update($data, ['path LIKE' => $opath . '%', 'status' => 1]);
+		} catch (\Exception $e) {
 			throw_exception($e->getMessage());
 		}
+
 		return true;
+	}
+
+	public function delNode($id) {
+		$path = $this->select('path')->where(['id' => $id])->get('path');
+
+		return $this->update(['status' => 2], ['path LIKE' => $path . '%', 'status' => 1]);
 	}
 }

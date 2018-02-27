@@ -66,34 +66,24 @@ class CmsDomainForm extends FormTable {
 	 * 模板
 	 * @var \backend\form\SelectField
 	 * @type string
-	 * @dataSource \wulaphp\form\providor\LineDataProvidor
-	 * @dsCfg {}
+	 * @dsCfg ::getThemes
 	 * @layout 4,col-xs-12
 	 */
 	public $theme;
 
-	/**
-	 * 修改字段属性.
-	 *
-	 * @param string $name    字段名
-	 * @param array  $options 字段属性.
-	 */
-	public function alterFieldOptions($name, &$options) {
-		if ($name == 'theme') {
-			$hd     = opendir(THEME_PATH);
-			$themes = array();
-			if ($hd) {
-				while (($f = readdir($hd)) != false) {
-					if ($f != '.' && $f != '..' && is_dir(THEME_PATH . $f)) {
-						$themes [ $f ] = $f;
-					}
+	public function getThemes(){
+		$hd     = opendir(THEME_PATH);
+		$themes = [];
+		if ($hd) {
+			while (($f = readdir($hd)) != false) {
+				if ($f != '.' && $f != '..' && is_dir(THEME_PATH . $f)) {
+					$themes [ $f ] = $f;
 				}
-				closedir($hd);
 			}
-			$options['dsCfg'] = $themes;
+			closedir($hd);
 		}
+		return $themes;
 	}
-
 	/**
 	 * 更新 cms_domain.
 	 *
