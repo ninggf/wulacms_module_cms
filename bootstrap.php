@@ -72,22 +72,15 @@ class CmsModule extends CmfModule {
 			$site       = $ui->getMenu('site', '网站');
 			$site->icon = '&#xe617;';
 			if ($passport->cando('m:cms/page')) {
-				$page              = $site->getMenu('domain', '域名', 1);
+				$page              = $site->getMenu('domain', '域名管理', 1);
 				$page->icon        = '&#xe64c;';
 				$page->iconCls     = 'layui-icon';
 				$page->data['url'] = App::url('cms/page/domain');
-			}
-			if ($passport->cando('m:cms/page')) {
-				$page              = $site->getMenu('channel', '栏目', 2);
+
+				$page              = $site->getMenu('channel', '内容管理', 2);
 				$page->icon        = '&#xe62a;';
 				$page->iconCls     = 'layui-icon';
 				$page->data['url'] = App::url('cms/page/channel');
-			}
-			if ($passport->cando('m:site/page')) {
-				$page              = $site->getMenu('page', '页面', 3);
-				$page->icon        = '&#xe7a0;';
-				$page->iconCls     = 'layui-icon';
-				$page->data['url'] = App::url('cms/page');
 			}
 			if ($passport->cando('m:site/block')) {
 				$page       = $site->getMenu('block', '列表', 900);
