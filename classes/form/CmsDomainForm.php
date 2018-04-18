@@ -38,40 +38,97 @@ class CmsDomainForm extends FormTable {
 	 * @var \backend\form\TextField
 	 * @type string
 	 * @required
-	 * @note   设置后只能通过此域名(如非80，443访问需带端口)访问管理后台。为了安全请尽量与前台域名不同。
-	 * @layout 1,col-xs-12
+	 * @layout 1,col-xs-8
 	 */
 	public $domain;
+	/**
+	 * 网站名称
+	 * @var \backend\form\TextField
+	 * @type string
+	 * @required
+	 * @layout 1,col-xs-4
+	 */
+	public $name;
 	/**
 	 * 是否是默认网站
 	 * @var \backend\form\SelectField
 	 * @type int
 	 * @dataSource \wulaphp\form\providor\LineDataProvidor
 	 * @dsCfg {"0":"不是","1":"是"}
-	 * @layout 2,col-xs-6
+	 * @layout 2,col-xs-4
 	 */
 	public $is_default = 0;
 
 	/**
-	 * 是否默认https
+	 * 强制HTTPS
 	 * @var \backend\form\SelectField
 	 * @type int
 	 * @dataSource \wulaphp\form\providor\LineDataProvidor
 	 * @dsCfg {"0":"不是","1":"是"}
-	 * @layout 2,col-xs-6
+	 * @layout 2,col-xs-4
 	 */
 	public $is_https = 0;
 
 	/**
-	 * 模板
+	 * 是否离线
+	 * @var \backend\form\SelectField
+	 * @type int
+	 * @dataSource \wulaphp\form\providor\LineDataProvidor
+	 * @dsCfg {"0":"不是","1":"是"}
+	 * @layout 2,col-xs-4
+	 */
+	public $offline = 0;
+
+	/**
+	 * 模板目录
 	 * @var \backend\form\SelectField
 	 * @type string
 	 * @dsCfg ::getThemes
-	 * @layout 4,col-xs-12
+	 * @layout 4,col-xs-4
 	 */
 	public $theme;
 
-	public function getThemes(){
+	/**
+	 * 主页模板
+	 * @var \backend\form\TextField
+	 * @type string
+	 * @required
+	 * @layout 4,col-xs-4
+	 */
+	public $tpl;
+	/**
+	 * 默认缓存时间（单位秒）
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @required
+	 * @digits
+	 * @layout 4,col-xs-4
+	 */
+	public $expire = 0;
+	/**
+	 * 主页标题
+	 * @var \backend\form\TextField
+	 * @type string
+	 * @required
+	 * @layout 5,col-xs-12
+	 */
+	public $title;
+	/**
+	 * 网站关键词
+	 * @var \backend\form\TextField
+	 * @type string
+	 * @layout 6,col-xs-12
+	 */
+	public $keywords;
+	/**
+	 * 网站描述
+	 * @var \backend\form\TextareaField
+	 * @type string
+	 * @layout 7,col-xs-12
+	 */
+	public $description;
+
+	public function getThemes() {
 		$hd     = opendir(THEME_PATH);
 		$themes = [];
 		if ($hd) {
@@ -82,13 +139,17 @@ class CmsDomainForm extends FormTable {
 			}
 			closedir($hd);
 		}
+
 		return $themes;
 	}
+
 	/**
 	 * 更新 cms_domain.
 	 *
 	 * @param mixed $con  条件
 	 * @param array $data 更新数据.
+	 *
+	 * @return bool
 	 */
 	public function updateDomain($con, $data) {
 		if (is_array($con)) {
@@ -104,6 +165,8 @@ class CmsDomainForm extends FormTable {
 	 * 新增 cms_domain.
 	 *
 	 * @param array $data 新增数据.
+	 *
+	 * @return bool
 	 */
 	public function indsertDomain($data) {
 		if (!$data) {
@@ -117,6 +180,8 @@ class CmsDomainForm extends FormTable {
 	 * 删除操作
 	 *
 	 * @param mixed $con 条件
+	 *
+	 * @return bool
 	 */
 	public function delDomain($con) {
 		if (is_array($con)) {
@@ -127,5 +192,4 @@ class CmsDomainForm extends FormTable {
 
 		return $this->delete($where);
 	}
-
 }

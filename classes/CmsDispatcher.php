@@ -1,39 +1,23 @@
 <?php
-/**
- * //                            _ooOoo_
- * //                           o8888888o
- * //                           88" . "88
- * //                           (| -_- |)
- * //                            O\ = /O
- * //                        ____/`---'\____
- * //                      .   ' \\| |// `.
- * //                       / \\||| : |||// \
- * //                     / _||||| -:- |||||- \
- * //                       | | \\\ - /// | |
- * //                     | \_| ''\---/'' | |
- * //                      \ .-\__ `-` ___/-. /
- * //                   ___`. .' /--.--\ `. . __
- * //                ."" '< `.___\_<|>_/___.' >'"".
- * //               | | : `- \`.;`\ _ /`;.`/ - ` : | |
- * //                 \ \ `-. \_ __\ /__ _/ .-` / /
- * //         ======`-.____`-.___\_____/___.-`____.-'======
- * //                            `=---='
- * //
- * //         .............................................
- * //                  佛祖保佑             永无BUG
- * DEC :
- * User: wangwei
- * Time: 2018/2/1 上午11:07
- */
 
 namespace cms\classes;
 
+use cms\classes\model\CmsPage;
+use wulaphp\app\App;
+use wulaphp\io\Request;
 use wulaphp\mvc\view\View;
 use wulaphp\router\IURLDispatcher;
 use wulaphp\router\Router;
 use wulaphp\router\UrlParsedInfo;
 
-class CmsDispatcher  implements IURLDispatcher {
+/**
+ * Class CmsDispatcher
+ * @package cms\classes
+ */
+class CmsDispatcher implements IURLDispatcher {
+	private $domain;
+	private $next = true;//是否解析动态页
+
 	/**
 	 * 分发URL.
 	 * 一旦有一个分发器返回View实例，则立即返回，停止分发其它的.
@@ -44,17 +28,247 @@ class CmsDispatcher  implements IURLDispatcher {
 	 *
 	 * @return View View 实例.
 	 */
-	function dispatch($url, $router, $parsedInfo) {
-		// TODO: Implement dispatch() method.
-//		if ($url == 'hello.html') {// hello.html
-//			return template('hello.tpl');
-//		} else if (preg_match('#^hello/(\d+)$#', $url, $ms)) {// hello/<id>
-//			$data['id'] = $ms[1];
-//
-//			return template('hello1.tpl', $data);
-//		}
+	public function dispatch($url, $router, $parsedInfo) {
+		$route = $this->parseURL($parsedInfo);
+		//解析不了
+		if (!$route) {
+			return null;
+		}
+		//域名检测
+		$this->domain = $this->checkDomain();
+		if (!$this->domain) {
+			return null;
+		}
+		//绑定模板目录
+		$theme = aryget('theme', $this->domain, 'default');
+		if ($theme != 'default') {
+			bind('get_theme', function ($th) use ($theme) {
+				return $theme;
+			}, 0);
+		}
+		//网站离线
+		if ($this->domain['offline']) {
+			return template('offline.tpl');
+		}
+		//首页
+		if ($route == 'index.html') {
+			return $this->renderHomePage($parsedInfo);
+		} else {
+			//静态页
+			$view = $this->renderStaticPage($route, $parsedInfo);
+			if (!$view && $this->next) {
+				//自定义路由页
+				$view = $this->renderTplPage($route, $parsedInfo);
+			}
+
+			return $view;
+		}
+	}
+
+	/**
+	 * 静态页面.
+	 *
+	 * @param string        $route
+	 * @param UrlParsedInfo $parsedInfo
+	 *
+	 * @return null
+	 */
+	private function renderStaticPage($route, $parsedInfo) {
+		$key = md5($route);
+		try {
+			$page = new CmsPage();
+			$data = $page->load($key, $parsedInfo);
+			if ($data) {
+				$tpl = $data['template_file'] ? $data['template_file'] : ($data['default_tpl'] ? $data['default_tpl'] : '');
+				if (!$tpl) {
+					$this->next = false;
+
+					return null;
+				}
+				@define('CMS_REAL_PAGE', $data);
+				if ($data['expire']) {
+					@define('CACHE_EXPIRE', $data['expire']);
+				}
+				$data['urlInfo']    = $parsedInfo;
+				$data['routerArgs'] = [];
+				$parsedInfo->setPageData($data);
+
+				return template($tpl, $data);
+			}
+		} catch (\Exception $e) {
+
+		}
 
 		return null;
 	}
 
+	/**
+	 * 模板页
+	 *
+	 * @param string        $route
+	 * @param UrlParsedInfo $parsedInfo
+	 *
+	 * @return null
+	 */
+	private function renderTplPage($route, $parsedInfo) {
+		try {
+			$db  = App::db();
+			$sql = 'SELECT id,url,content_file AS content FROM {cms_page} AS CP INNER JOIN {cms_page_field} AS CPF ON CP.id = CPF.page_id WHERE CP.model = 2 AND CP.status = 1 ORDER BY content_file DESC';
+			$rts = $db->fetch($sql);
+			if ($rts) {
+				$pid  = 0;
+				$args = [];
+				while ($row = $rts->fetch(\PDO::FETCH_ASSOC)) {
+					$content = $row['content'];
+					if ($content) {
+						$content = substr($content, 3);
+						$content = '#^' . $content . '$#';
+						if (preg_match($content, $route, $ms)) {
+							$pid = $row['id'];
+							$cnt = count($ms);
+							for ($i = 1; $i < $cnt; $i++) {
+								$args[ 'arg' . $i ] = $ms[ $i ];
+							}
+							break;
+						}
+					}
+				}
+				$rts->closeCursor();
+				if ($pid) {
+					$key  = md5($row['url']);
+					$page = new CmsPage();
+					$data = $page->load($key, $parsedInfo);
+					if ($data) {
+						$tpl = $data['template_file'] ? $data['template_file'] : ($data['default_tpl'] ? $data['default_tpl'] : '');
+						if (!$tpl) {
+							return null;
+						}
+						@define('CMS_REAL_PAGE', $data);
+						if ($data['expire']) {
+							@define('CACHE_EXPIRE', $data['expire']);
+						}
+						$data['urlInfo']    = $parsedInfo;
+						$data['routerArgs'] = $args;
+						//正在查看的页面数据
+						$parsedInfo->setPageData($data);
+
+						return template($tpl, $data);
+					}
+				}
+			}
+		} catch (\Exception $e) {
+
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param UrlParsedInfo $parsedInfo
+	 *
+	 * @return null|\wulaphp\mvc\view\ThemeView
+	 */
+	private function renderHomePage($parsedInfo) {
+		$data['id']          = 0;
+		$data['title']       = $this->domain['title'];
+		$data['keywords']    = $this->domain['keywords'];
+		$data['description'] = $this->domain['description'];
+		$data['urlInfo']     = $parsedInfo;
+		$data                = apply_filter('cms\onRenderHome', $data);
+		if ($data) {
+			if (isset ($data ['template_file'])) {
+				$tpl = $data ['template_file'];
+			} else {
+				$tpl = $this->domain['tpl'];
+			}
+			@define('CMS_REAL_PAGE', $data);
+			if ($this->domain['expire']) {
+				//开启缓存指令
+				@define('CACHE_EXPIRE', $this->domain['expire']);
+			}
+			$parsedInfo->setPageData($data);
+
+			return template($tpl, $data);
+		}
+
+		return null;
+	}
+
+	/**
+	 * 检测域名.
+	 *
+	 * @return array|bool
+	 */
+	private function checkDomain() {
+		$domain = false;
+		try {
+			$db     = App::db();
+			$domain = $db->queryOne('SELECT * FROM {cms_domain} WHERE domain = %s LIMIT 0,1', VISITING_DOMAIN);
+			if (!$domain) {
+				$domain = $db->queryOne('SELECT * FROM {cms_domain} WHERE is_default = 1 LIMIT 0,1');
+			}
+		} catch (\Exception $e) {
+
+		}
+		if ($domain) {
+			//强制https访问.
+			if ($domain['is_https'] && !Request::isHttps()) {
+				return false;
+			}
+
+			return $domain;
+		}
+
+		return false;
+	}
+
+	/**
+	 * 解析URL.
+	 *
+	 * @param UrlParsedInfo $parsedInfo
+	 *
+	 * @return string
+	 */
+	private function parseURL($parsedInfo) {
+		$pageSet = false;
+		if (preg_match('#.+?\.$#', $parsedInfo->url)) {
+			return false;
+		}
+		if (rqset('_cpn')) {
+			$parsedInfo->page = irqst('_cpn');
+			$pageSet          = true;
+		}
+		if (preg_match('#(.+?)(_([\d]+|all))?$#', $parsedInfo->name, $ms)) {
+			$parsedInfo->name   = $ms[1];
+			$parsedInfo->ogname = urlencode($ms[1]);
+			if (isset($ms[3])) {
+				if ($ms[3] === '1') {
+					return false;
+				}
+				if ($ms[3] == 'all') {
+					$ms[3] = PHP_INT_MAX;
+				} else {
+					$ms[3] = intval($ms[3]);
+				}
+				if (!$pageSet) {
+					$parsedInfo->page = $ms[3];
+				}
+			}
+		}
+		if (!preg_match('#.+?(\..+)$#', $parsedInfo->url)) {
+			if ($parsedInfo->page > 1 && !$pageSet) {
+				return false;
+			}
+			$parsedInfo->name   .= '/index';
+			$parsedInfo->ogname .= '/index';
+			if (!$parsedInfo->ext) {
+				$parsedInfo->ext = 'html';
+			}
+		}
+		if (!$parsedInfo->ext) {
+			return false;
+		}
+
+		return ltrim(implode('', [$parsedInfo->path, '/', $parsedInfo->name, '.' . $parsedInfo->ext]), '/');
+	}
 }

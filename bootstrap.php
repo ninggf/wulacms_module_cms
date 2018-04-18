@@ -3,13 +3,16 @@
 namespace cms;
 
 use backend\classes\DashboardUI;
+use cms\classes\ArticlePage;
+use cms\classes\Catagory;
 use cms\classes\CmsDispatcher;
-use cms\classes\CmsPageDispatcher;
+use cms\classes\ds\PageDatasource;
+use cms\classes\DynamicPage;
 use cms\classes\form\CmsDomainForm;
+use cms\classes\StaticPage;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
 use wulaphp\auth\AclResourceManager;
-use wulaphp\router\Router;
 
 /**
  * Class CmsModule
@@ -40,15 +43,6 @@ class CmsModule extends CmfModule {
 	}
 
 	/**
-	 * @param \wulaphp\router\Router $router
-	 *
-	 * @bind router\registerDispatcher
-	 */
-	public static function regRouter(Router $router) {
-		$router->register(new CmsPageDispatcher(), 50);
-	}
-
-	/**
 	 * 注册分发器
 	 *
 	 * @param \wulaphp\router\Router $router
@@ -56,7 +50,7 @@ class CmsModule extends CmfModule {
 	 * @bind router\registerDispatcher
 	 */
 	public static function regDispatcher($router) {
-		$router->register(new CmsDispatcher());
+		$router->register(new CmsDispatcher(), 10000000);
 	}
 
 	/**
@@ -68,41 +62,43 @@ class CmsModule extends CmfModule {
 	 */
 	public static function initUI(DashboardUI $ui) {
 		$passport = whoami('admin');
-		if ($passport->cando('m:cms')) {
-			$site       = $ui->getMenu('site', '网站');
-			$site->icon = '&#xe617;';
-			if ($passport->cando('m:cms/page')) {
-				$page              = $site->getMenu('domain', '域名管理', 1);
-				$page->icon        = '&#xe64c;';
-				$page->iconCls     = 'layui-icon';
-				$page->data['url'] = App::url('cms/page/domain');
+		if ($passport->cando('m:sitem')) {
+			$site1       = $ui->getMenu('site', '我的网站', 1);
+			$site1->icon = '&#xe617;';
+			$site        = $site1->getMenu('cms', '我的网站', 1);
+			$site->icon  = '&#xe617;';
+			if ($passport->cando('m:site/page')) {
+				$page              = $site->getMenu('pages', '内容管理', 1);
+				$page->icon        = '&#xe637;';
+				$page->data['url'] = App::url('cms/site');
 
-				$page              = $site->getMenu('channel', '内容管理', 2);
-				$page->icon        = '&#xe62a;';
-				$page->iconCls     = 'layui-icon';
-				$page->data['url'] = App::url('cms/page/channel');
+				//				if ($passport->cando('m:site/block')) {
+				//					$block       = $site->getMenu('block', '页面区块', 900);
+				//					$block->icon = '&#xe61a;';
+				//				}
+
+				if ($passport->cando('m:site/model')) {
+					$model              = $site->getMenu('model', '内容模型', 999);
+					$model->icon        = '&#xe705;';
+					$model->iconCls     = 'layui-icon';
+					$model->iconStyle   = 'color:orange';
+					$model->data['url'] = App::url('cms/model');
+				}
+
+				if ($passport->cando('dm:site/page')) {
+					$domain              = $site->getMenu('domain', '网站域名', 1000);
+					$domain->icon        = '&#xe64c;';
+					$domain->iconCls     = 'layui-icon';
+					$domain->data['url'] = App::url('cms/domain');
+				}
 			}
-			if ($passport->cando('m:site/block')) {
-				$page       = $site->getMenu('block', '列表', 900);
-				$page->icon = '&#xe61a;';
-			}
-			if ($passport->cando('m:site/chunk')) {
-				$page          = $site->getMenu('chunk', '部件', 901);
-				$page->icon    = '&#xe634;';
-				$page->iconCls = 'layui-icon';
-			}
-			if ($passport->cando('m:site/model')) {
-				$site            = $ui->getMenu('site');
-				$page            = $site->getMenu('model', '模型', 999);
-				$page->icon      = '&#xe705;';
-				$page->iconCls   = 'layui-icon';
-				$page->iconStyle = 'color:orange';
-			}
+
 			if ($passport->is('开发人员')) {
-				$page            = $site->getMenu('tpl', '模板', 2001);
-				$page->icon      = '&#xe632;';
-				$page->iconCls   = 'layui-icon';
-				$page->iconStyle = "color:orange";
+				$tpl              = $site1->getMenu('tpl', '模板调用', 2001);
+				$tpl->icon        = '&#xe632;';
+				$tpl->iconCls     = 'layui-icon';
+				$tpl->iconStyle   = "color:orange";
+				$tpl->data['url'] = App::url('cms/cts');
 			}
 		}
 	}
@@ -117,16 +113,16 @@ class CmsModule extends CmfModule {
 	public static function initAcl(AclResourceManager $manager) {
 		$manager->getResource('site', 'CMS', 'm');
 
-		$acl = $manager->getResource('site/page', '网页管理', 'm');
-		$acl->addOperate('edit', '编辑');
-		$acl->addOperate('del', '删除');
+		$acl = $manager->getResource('site/page', '我的网站', 'm');
+		$acl->addOperate('edit', '编辑页面');
+		$acl->addOperate('del', '删除删除');
 		$acl->addOperate('mc', '管理栏目');
+		$acl->addOperate('dm', '域名管理');
+		$acl->addOperate('ap', '审核页面');
+		$acl->addOperate('pb', '发布页面');
+		$acl->addOperate('hc', '清空缓存');
 
-		$acl = $manager->getResource('site/block', '列表管理', 'm');
-		$acl->addOperate('edit', '编辑');
-		$acl->addOperate('del', '删除');
-
-		$acl = $manager->getResource('site/chunk', '部件管理', 'm');
+		$acl = $manager->getResource('site/block', '页面区块', 'm');
 		$acl->addOperate('edit', '编辑');
 		$acl->addOperate('del', '删除');
 
@@ -151,11 +147,55 @@ class CmsModule extends CmfModule {
 		return $theme;
 	}
 
+	/**
+	 * 注册内容模型
+	 *
+	 * @param array $models
+	 *
+	 * @filter cms\initModel
+	 * @return array
+	 */
+	public static function regModels($models) {
+		$models['article']  = new ArticlePage();//文章页
+		$models['catagory'] = new Catagory();//栏目
+		$models['dynamic']  = new DynamicPage();//动态模板页
+		$models['static']   = new StaticPage();//静态模板页
+
+		return $models;
+	}
+
+	/**
+	 * @param array $ms
+	 *
+	 * @filter wula\jqadmin\reg_module
+	 * @return array
+	 */
+	public static function regLayuims($ms) {
+		$ms['cms.main'] = '{/}' . App::res('cms/assets/js/main');
+
+		return $ms;
+	}
+
+	/**
+	 * 注册cts数据源。
+	 *
+	 * @param array $ds
+	 *
+	 * @filter tpl\regCtsDatasource
+	 * @return array
+	 */
+	public static function regDss($ds) {
+		$ds['page'] = new PageDatasource();
+
+		return $ds;
+	}
+
 	/*
 	 * provide hook to template
 	*/
 	protected function bind() {
 		bind('get_theme', [$this, 'get_theme']);
+		bind('cms\onCatagoryPagePublished', '&\cms\classes\Catagory');
 	}
 }
 

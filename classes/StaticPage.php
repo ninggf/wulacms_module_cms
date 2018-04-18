@@ -12,30 +12,23 @@ namespace cms\classes;
 
 use cms\classes\model\CmsPage;
 
-/**
- * 动态页（路由）
- */
-class DynamicPage extends ModelDoc {
+class StaticPage extends ModelDoc {
 	public function id() {
-		return 'dynamic';
+		return 'static';
 	}
 
 	public function name() {
-		return '动态模板页';
+		return '静态模板页';
 	}
 
 	public function getForm($id, &$data) {
-		$form = new DynamicPageForm(true);
-		if ($id) {
-			//还原URL
-			$data['url'] = substr($data['url'], strlen($data['cchannel']['path']) - 1);
-		}
+		$form = new StaticPageForm(true);
 
 		return $form;
 	}
 
 	public function getTpl($id, &$data) {
-		return 'page/dynamic';
+		return 'page/static';
 	}
 
 	/**
@@ -48,16 +41,7 @@ class DynamicPage extends ModelDoc {
 	public function save(&$data, $uid) {
 		$id = $data['id'];
 		unset($data['id']);
-		$page        = $this->commonData($data);
-		$page['url'] = ltrim($page['path'] . $data['url'], '/');
-		$url         = self::parseRoute($page['url'], $cnt);
-		if (!$url) {
-			$this->error = '页面URL路由规则不正确';
-
-			return false;
-		}
-		$cnt                  = $cnt < 10 ? '0' . $cnt : $cnt;
-		$page['content_file'] = $cnt . '@' . $url;
+		$page = $this->commonData($data);
 		//cms_page
 		$table      = new CmsPage();
 		$table->uid = $uid;
@@ -130,12 +114,20 @@ class DynamicPage extends ModelDoc {
 			'sort'  => true,
 			'width' => 65
 		];
+		$tpl             = null;
+		$site            = self::getDefaultSite();
+		if ($site) {
+			$url = trailingslashit(($site['is_https'] ? 'https://' : 'http://') . $site['domain']);
+			$tpl = '<div><a href="' . $url . '{{d.url}}" target="_blank">{{d.url}}</a></div>';
+		}
 		$cols[0][ ++$i ] = [
-			'field' => 'url',
-			'title' => '路由规则',
-			'sort'  => true,
-			'width' => 250
+			'field'   => 'url',
+			'title'   => 'URL',
+			'templet' => $tpl,
+			'sort'    => true,
+			'width'   => 250
 		];
+
 		$cols[0][ ++$i ] = [
 			'field' => 'title2',
 			'title' => '页面名称',
@@ -180,33 +172,5 @@ class DynamicPage extends ModelDoc {
 		}
 
 		return $sort;
-	}
-
-	/**
-	 * 解析路由规则.
-	 *
-	 * @param string $url
-	 * @param mixed  $cnt
-	 *
-	 * @return int|string
-	 */
-	public static function parseRoute($url, &$cnt = null) {
-		$cnt  = 0;
-		$rurl = preg_replace_callback('#\(([ds\*])\)#', function ($m) use (&$cnt) {
-			$cnt++;
-			if ($m[1] == 'd') {
-				return '[?[\d]+?]';
-			} else if ($m[1] == 's') {
-				return '[?[a-z\-]+?]';
-			} else {
-				return '[?[a-z\-\d]+?]';
-			}
-		}, $url);
-		if ($cnt > 0 && strpos($rurl, '(') === false && strpos($rurl, ')') === false) {
-
-			return str_replace(['[?', '?]', '.'], ['(', '?)', '\.'], $rurl);
-		}
-
-		return 0;
 	}
 }

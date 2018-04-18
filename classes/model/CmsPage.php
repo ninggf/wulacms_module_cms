@@ -1,136 +1,604 @@
 <?php
-/**
- * DEC : cms_page model
- * User: wangwei
- * Time: 2018/2/1 下午1:28
- */
 
 namespace cms\classes\model;
 
+use cms\classes\ModelDoc;
+use wula\cms\Storage;
+use wulaphp\app\App;
+use wulaphp\db\DatabaseConnection;
 use wulaphp\db\Table;
-use wulaphp\util\ArrayCompare;
+use wulaphp\io\Ajax;
+use wulaphp\io\Request;
 
 class CmsPage extends Table {
-	private $menus = [];
-	public  $level = 1;
+	public $uid = 0;
 
-	public function getChannelTree($path = '') {
-		//根据path寻找子类
-		if ($path) {
-			$where['CP.path LIKE'] = $path . '%';
+	/**
+	 * 加载页面
+	 *
+	 * @param int|string                    $urlkey
+	 * @param \wulaphp\router\UrlParsedInfo $pageInfo 页码
+	 *
+	 * @return array
+	 */
+	public function load($urlkey, $pageInfo = null) {
+		$db   = $this->dbconnection;
+		$sql  = <<<SQL
+SELECT 
+	CP.id,CP.status,CP.expire,CP.path,CP.ver,
+    CPF.*,
+    CPV.data_file,
+    CM.name AS model_name,CM.refid AS model_id,CM.flags AS model_flags,
+	CCH.title2 AS channel_name,CCH.title AS channel_title,
+    CCHM.template_file AS default_tpl
+FROM {cms_router} AS CR 
+LEFT JOIN {cms_page} AS CP ON CP.id = CR.id
+LEFT JOIN {cms_page_field} AS CPF ON CP.id = CPF.page_id
+LEFT JOIN {cms_model} AS CM ON CP.model = CM.id 
+LEFT JOIN {cms_page_field} AS CCH ON CPF.channel = CCH.page_id
+LEFT JOIN {cms_channel_model} AS CCHM ON (CP.model = CCHM.model AND CCHM.page_id = CPF.channel)
+LEFT JOIN {cms_page_rev} AS CPV ON (CR.id = CPV.page_id AND CPV.ver = CP.ver)
+WHERE route = '$urlkey' AND CP.status = 1 LIMIT 0,1
+SQL;
+		$page = $db->queryOne($sql);
+		if (!$page) {
+			return null;
 		}
-		$where['CP.status'] = 1;
-		$where['CP.model']  = 1;
-		$query              = $this->alias('CP')->select('CP.id,CP.model,CP.path,CP.url,CPF.title')->join('{cms_page_field} as CPF', 'CP.id=CPF.page_id')->where($where);
-		foreach ($query as $q) {
-
-			$this->getMenu($q['path'], $q['title'], $q['path'], $q['id']);
+		if ($page['data_file']) {
+			$page['fields'] = $this->loadFile($page['data_file']);
 		}
+		//加载页面扩展内容
+		$this->loadAddon($page, $pageInfo);
 
-		return $this->menuData();
+		return $page;
 	}
 
 	/**
-	 * 获取导航菜单.
+	 * 加载页面扩展内容.
 	 *
-	 * @param string   $id   菜单ID
-	 * @param string   $name 菜单名称
-	 * @param int|null $pos  位置
-	 *
-	 * @return \cms\classes\Channel Menu实例的引用
+	 * @param array                         $page     至少包括id与model字段。
+	 * @param \wulaphp\router\UrlParsedInfo $pageInfo 页码
 	 */
-	public function &getMenu($id, $name = '', $url = null, $pid = 0) {
-		$ids = explode('/', trim($id, '/'));
-		$id  = array_shift($ids);
-		if (isset ($this->menus [ $id ])) {
-			$menu = $this->menus [ $id ];
-		} else {
-			$menu                = new \cms\classes\Channel($id);
-			$this->menus [ $id ] = &$menu;
-		}
-		if ($ids) {
-			foreach ($ids as $id) {
-				$menu = $menu->getMenu($id);
+	public function loadAddon(&$page, $pageInfo) {
+		if (isset($page['model_id']) && $page['model_id']) {
+			$doc = ModelDoc::getDoc($page['model_id']);
+			if ($doc) {
+				$doc->load($page, $pageInfo);
 			}
 		}
-		if ($name) {
-			$menu->name = $name;
-		}
-		if ($url != null) {
-			$menu->url = $url;
-		} else if (!$menu->url) {
-			$menu->url = '';
-		}
-		$menu->id = $pid;
-
-		return $menu;
 	}
 
 	/**
-	 * 获取菜单数据.
+	 * 根据页面ID加载页面基本数据.
 	 *
-	 * @param bool $group 是否启用分组(在下拉菜单时有用)
+	 * @param string|int $id    页面ID
+	 * @param bool       $addon 是否加载更多数据
 	 *
-	 * @return array 菜单数据
+	 * @return array
 	 */
-	public function menuData($group = false) {
-		$menus = ['menus' => []];
-		/** @var \cms\classes\Channel $menu */
-		foreach ($this->menus as $menu) {
-			$menus['menus'][] = $menu->data($group);
-		}
-		usort($menus['menus'], ArrayCompare::compare('pos1'));
-		//处理分组
-		if ($group) {
-			$gdata = [];
-			foreach ($menus['menus'] as $cd) {
-				$gp = $cd['group'];
-				unset($cd['group']);
-				$gdata[ $gp ][] = $cd;
-			}
-			$_tpmenus = [];
-			foreach ($gdata as $gds) {
-				$_tpmenus   = array_merge($_tpmenus, $gds);
-				$_tpmenus[] = ['name' => 'divider'];
-			}
-			array_pop($_tpmenus);
-			$menus['menus'] = $_tpmenus;
+	public function loadFields($id, $addon = true) {
+		$pages = $this->dbconnection->queryOne('SELECT CPF.*,CPF.page_id AS id,CM.name AS model_name,CM.refid AS model_id,CP.status,CP.expire,CP.path,CP.url,CP.noindex FROM {cms_page_field} AS CPF LEFT JOIN {cms_model} AS CM ON CM.id = CPF.model LEFT JOIN {cms_page} AS CP ON CP.id= CPF.page_id WHERE page_id = ' . intval($id) . ' LIMIT 0,1');
+		if ($pages && $addon) {
+			$this->loadAddon($pages, null);
 		}
 
-		return $menus;
+		return $pages;
 	}
 
-	public function get_one($cond = []) {
-		if (!is_array($cond)) {
-			$where['id'] = $cond;
-		} else {
-			$where = $cond;
-		}
-		$res = $this->select('*')->where($where)->get(0);
-
-		return $res;
-	}
-
-	public function add($data) {
+	/**
+	 * 创建一个新的页面.
+	 *
+	 * @param array $data  新页面数据
+	 * @param mixed $error 错误信息
+	 *
+	 * @return bool|int 新页面ID或false.
+	 */
+	public function newPage($data, &$error = null) {
 		if (!$data) {
+			$error = '数据为空';
+
+			return false;
+		}
+		if (!$data['create_time']) {
+			$data['create_time'] = time();
+		}
+		if (!$data['create_uid']) {
+			$data['create_uid'] = $this->uid;
+		}
+		$data['update_uid']  = $data['create_uid'];
+		$data['update_time'] = $data['create_time'];
+		$page                = array_filter($data, function ($key) {
+			return in_array($key, ['model', 'noindex', 'expire', 'create_time', 'create_uid', 'path', 'url']);
+		}, ARRAY_FILTER_USE_KEY);
+
+		if (!$page || empty($page['url']) || empty($page['model']) || empty($page['path'])) {
+			$error = '页面数据不完整';
+
 			return false;
 		}
 
-		return $this->insert($data);
+		$rt['route'] = md5($page['url']);
+		try {
+			$this->dbconnection->start();
+			$page['ver']    = 0;
+			$page['status'] = 0;
+			$id             = $this->insert($page);
+			if ($id) {
+				//创建路由
+				$rt['id'] = $id;
+				try {
+					$rst = $this->dbconnection->insert($rt)->into('{cms_router}')->exec();
+				} catch (\Exception $ee) {
+					$rst = false;
+				}
+				if (!$rst) {
+					$error = Ajax::validate('PageForm', ['url' => '文件名好像已经存在了']);
+					$this->dbconnection->rollback();
+
+					return false;
+				}
+				$data['id'] = $id;
+
+				//创建页面字段
+				$fields                = array_filter($data, function ($key) {
+					return in_array($key, [
+						'channel',
+						'model',
+						'path',
+						'title',
+						'title2',
+						'keywords',
+						'description',
+						'template_file',
+						'content_file',
+						'image',
+						'related_pages',
+						'author',
+						'source',
+						'tags',
+						'flags'
+					]);
+				}, ARRAY_FILTER_USE_KEY);
+				$fields['page_id']     = $id;
+				$fields['update_time'] = $page['create_time'];
+				$fields['update_uid']  = $page['create_uid'];
+				$rst                   = $this->dbconnection->insert($fields)->into('{cms_page_field}')->exec();
+				if (!$rst) {
+					throw_exception('无法创建页面[数据库出错]');
+				}
+				//通知页面创建了
+				fire('cms\on' . ucfirst($data['model_refid']) . 'PageCreated', $data, $this->dbconnection);
+				fire('cms\onPageCreated', $data, $this->dbconnection);
+				//创建版本
+				$rst = $this->newRev($id, $data, $this->dbconnection);
+				if (!$rst) {
+					throw_exception('无法创建页面版本[数据库出错]');
+				}
+				$data['ver'] = $rst;
+				//提交事务
+				if ($this->dbconnection->commit()) {
+					return $id;
+				}
+			}
+
+			$error = '数据库出错';
+			$this->dbconnection->rollback();
+
+			return false;
+		} catch (\Exception $e) {
+			$error = $e->getMessage();
+			$this->dbconnection->rollback();
+
+			return false;
+		}
 	}
 
-	public function get_page($page_id = 0) {
-		$where['CP.id'] = $page_id;
-		$res            = $this->alias('CP')->select('CP.id,CP.model,CP.path,CP.url,CPF.title,CPF.title2,CPF.keywords,CPF.description')->join('{cms_page_field} as CPF', 'CP.id=CPF.page_id')->where($where)->get();
+	/**
+	 * 更新页面
+	 *
+	 * @param string|int $id
+	 * @param array      $data
+	 * @param mixed      $error
+	 *
+	 * @return bool
+	 */
+	public function updatePage($id, $data, &$error = null) {
+		$id = intval($id);
+		if (!$id) {
+			$error = '未指定要更新的页面';
 
-		return $res;
+			return false;
+		}
+		if (!$data) {
+			$error = '数据为空';
 
+			return false;
+		}
+		$data['id'] = $id;
+		try {
+			$this->dbconnection->start();
+			//创建版本
+			$rst = $this->newRev($id, $data, $this->dbconnection);
+			if (!$rst) {
+				throw_exception('无法创建页面版本[数据库出错]');
+
+				return false;
+			}
+			$data['ver'] = $rst;
+			//提交事务
+			if ($this->dbconnection->commit()) {
+				return true;
+			}
+			$error = '数据库出错';
+
+			return false;
+		} catch (\Exception $e) {
+			$error = $e->getMessage();
+			$this->dbconnection->rollback();
+
+			return false;
+		}
 	}
 
-	public function updatePage($data, $cond = []) {
-		return $this->update($data, $cond);
+	/**
+	 * 将页面放入回收站.
+	 *
+	 * @param string|int $id
+	 * @param mixed      $error
+	 *
+	 * @return bool
+	 */
+	public function deletePage($id, &$error = null) {
+		$id = intval($id);
+		if (!$id) {
+			$error = '页面ID为空';
+
+			return false;
+		}
+		$rst = $this->trans(function (DatabaseConnection $dbx) use ($id) {
+			$page = $this->loadFields($id, false);
+			if (isset($page['model_id']) && $page['model_id']) {
+				$doc = ModelDoc::getDoc($page['model_id']);
+				if (!$doc) {
+					throw_exception('内容模型实现不存在');
+				}
+				$doc->transDb($dbx);
+				$rst = $doc->recycle($page, $this->uid);
+				if (!$rst) {
+					throw_exception($doc->last_error());
+				}
+			} else {
+				throw_exception('内容模型不存在');
+			}
+
+			return true;
+		});
+		if (!$rst) {
+			$error = $this->errors;
+		}
+
+		return $rst;
 	}
 
+	/**
+	 * 从回收站还原页面。
+	 *
+	 * @param string|int $id
+	 * @param mixed      $error
+	 *
+	 * @return bool|mixed|null
+	 */
+	public function restorePage($id, &$error = null) {
+		$id = intval($id);
+		if (!$id) {
+			$error = '页面ID为空';
+
+			return false;
+		}
+		$rst = $this->trans(function (DatabaseConnection $dbx) use ($id) {
+			$rtn = $dbx->cudx('UPDATE {cms_page} SET status = origin_status WHERE id = ' . $id);
+			if (!$rtn) {
+				throw_exception('无法更新数据库');
+			}
+			$page = $this->loadFields($id, false);
+			if (isset($page['model_id']) && $page['model_id']) {
+				$doc = ModelDoc::getDoc($page['model_id']);
+				if (!$doc) {
+					throw_exception('内容模型实现不存在');
+				}
+				$doc->transDb($dbx);
+				$rst = $doc->restore($page, $this->uid);
+				if (!$rst) {
+					throw_exception($doc->last_error());
+				}
+			} else {
+				throw_exception('内容模型不存在');
+			}
+
+			return true;
+		});
+		if (!$rst) {
+			$error = $this->errors;
+		}
+
+		return $rst;
+	}
+
+	/**
+	 * 创建一个新的版本.
+	 *
+	 * @param string|int                     $id   页面ID
+	 * @param array                          $data 页面数据
+	 * @param \wulaphp\db\DatabaseConnection $db   数据库连接
+	 *
+	 * @return bool|int 版本号或false.
+	 */
+	public function newRev($id, $data, $db = null) {
+		$fields = array_filter($data, function ($key) {
+			return in_array($key, [
+				'ver',
+				'update_time',
+				'update_uid',
+				'content_file',
+				'channel',
+				'model',
+				'path',
+				'title',
+				'title2',
+				'keywords',
+				'description',
+				'template_file',
+				'image',
+				'related_pages',
+				'author',
+				'source',
+				'tags',
+				'flags'
+			]);
+		}, ARRAY_FILTER_USE_KEY);
+		if (!$fields['update_uid']) {
+			$data['update_uid'] = $fields['update_uid'] = $this->uid;
+		}
+		if ($fields['update_time']) {
+			$data['update_time'] = $fields['update_time'] = time();
+		}
+		unset($data['path']);//path是动态生成的，不保存.
+		$fields['page_id'] = $id;
+		$db                = $db ? $db : $this->dbconnection;
+		//开启审核机制
+		$approveEnabled = App::bcfg('approveEnabled@cms', false);
+		//开启版本控制
+		$vcEnabled        = App::bcfg('vcEnabled@cms', false);
+		$fields['status'] = $approveEnabled ? 0 : 3;
+		$fields['ip']     = Request::getIp();
+		$newVer           = false;
+		if (!isset($data['ver']) || !$data['ver']) {
+			$nv = $db->queryOne('SELECT MAX(ver) AS new_ver FROM {cms_page_rev} WHERE page_id = ' . $id);
+			if ($nv && $nv['new_ver'] && $vcEnabled) {//开启版本控制
+				$nv = $nv['new_ver'] + 1;
+			} else {
+				$nv = 1;
+			}
+			$fields['ver'] = $nv;
+			$newVer        = true;
+		} else {
+			$fields['ver'] = $data['ver'];
+		}
+		//版本数据存储路径
+		$file = 'c' . ($id % 10) . '/data@' . $fields['ver'];
+		if (!$this->store($file, $data)) {
+			return false;
+		}
+		$fields['data_file'] = $file;
+		if ($newVer) {
+			try {
+				$rst = $db->insert($fields)->into('{cms_page_rev}')->exec();
+			} catch (\Exception $e) {
+				$fields['update_time'] = time();
+				$fields['update_uid']  = $data['update_uid'] ? $data['update_uid'] : $this->uid;
+				$rst                   = $db->update('{cms_page_rev}')->set($fields)->where([
+					'page_id' => $id,
+					'ver'     => $fields['ver']
+				])->exec(true);
+			}
+		} else {
+			$fields['update_time'] = time();
+			$fields['update_uid']  = $data['update_uid'] ? $data['update_uid'] : $this->uid;
+			$rst                   = $db->update('{cms_page_rev}')->set($fields)->where([
+				'page_id' => $id,
+				'ver'     => $fields['ver']
+			])->exec(true);
+
+			if (!$rst) {
+				$rst = $db->insert($fields)->into('{cms_page_rev}')->exec();
+			}
+		}
+		if (!$rst) {
+			//修改版本数据异常
+			return false;
+		}
+		try {
+			fire('cms\on' . ucfirst($data['model_refid'] . 'PageUpdated'), $data, $data);
+			fire('cms\onPageUpdated', $data, $db);
+		} catch (\Exception $e) {
+			return false;
+		}
+		if (!$approveEnabled) {
+			//未开启审核机制，直接发布
+			$rst = $this->useRev($id, $fields['ver'], $db);
+			if (!$rst) {
+				return false;
+			}
+		}
+
+		return $fields['ver'];
+	}
+
+	/**
+	 * 使用版本.
+	 *
+	 * @param string|int                     $id
+	 * @param string|int                     $ver
+	 * @param \wulaphp\db\DatabaseConnection $db
+	 * @param string|int                     $uid
+	 *
+	 * @return bool|int
+	 */
+	public function useRev($id, $ver, $db = null, $uid = null) {
+		$id  = intval($id);
+		$ver = intval($ver);
+		if (!$ver || !$id) {
+			return false;
+		}
+		$db   = $db ? $db : $this->dbconnection;
+		$data = $this->loadRev($id, $ver);
+		if (!$data) {
+			return false;
+		}
+		//创建页面字段
+		$fields = array_filter($data, function ($key) {
+			return in_array($key, [
+				'channel',
+				'model',
+				'path',
+				'title',
+				'title2',
+				'keywords',
+				'description',
+				'template_file',
+				'content_file',
+				'image',
+				'related_pages',
+				'author',
+				'source',
+				'tags',
+				'flags'
+			]);
+		}, ARRAY_FILTER_USE_KEY);
+
+		$fields['update_time'] = time();
+		$fields['update_uid']  = $uid ? $uid : (isset($data['update_uid']) ? $data['update_uid'] : $this->uid);
+		//更新cms_page_field
+		if ($db->update('{cms_page_field}')->set($fields)->where(['page_id' => $id])->exec()) {
+			//更新cms_page
+			if ($db->update('{cms_page}')->set(['ver' => $data['ver'], 'status' => 1])->where(['id' => $id])->exec()) {
+				//发布
+				return $this->publishPage($id, $data, $db, $uid ? $uid : $fields['update_uid']);
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 加载版本数据
+	 *
+	 * @param int|string      $id  页面ID
+	 * @param string|int|null $ver 版本
+	 *
+	 * @return array
+	 */
+	public function loadRev($id, $ver = null) {
+		$id = intval($id);
+		if (!$id) {
+			return [];
+		}
+		$ver = intval($ver);
+		$sql = 'SELECT CPV.* FROM {cms_page_rev} AS CPV WHERE CPV.page_id = ' . $id;
+		if ($ver) {
+			$sql .= ' AND CPV.ver = ' . $ver;
+		} else {
+			$sql .= ' ORDER BY ver DESC';
+		}
+		$sql  .= ' LIMIT 0,1';
+		$data = $this->dbconnection->queryOne($sql);
+		if (!$data) {
+			return [];
+		}
+		$data_file = $data['data_file'];
+		$pageData  = $this->loadFile($data_file);
+		if ($pageData) {
+			$pageData['ver'] = $data['ver'];
+		}
+
+		return $pageData;
+	}
+
+	/**
+	 * 存一个文件.
+	 *
+	 * @param string       $file
+	 * @param array|string $data
+	 *
+	 * @return bool
+	 */
+	public function store($file, $data) {
+		try {
+			$ssns    = App::cfg('storage@cms', 'file:path=storage');
+			$storage = new Storage($ssns);
+			if (is_array($data)) {
+				$data = json_encode($data);
+			}
+
+			return $storage->save($file, $data);
+		} catch (\Exception $e) {
+			return false;
+		}
+	}
+
+	/**
+	 * 删除存储的文件.
+	 *
+	 * @param string $file
+	 *
+	 * @return bool
+	 */
+	public function deleteFile($file) {
+		try {
+			$ssns    = App::cfg('storage@cms', 'file:path=storage');
+			$storage = new Storage($ssns);
+
+			return $storage->delete($file);
+		} catch (\Exception $e) {
+			return false;
+		}
+	}
+
+	/**
+	 * 从存储加载文件内容
+	 *
+	 * @param string $file 文件名.
+	 * @param bool   $json 是否转换为json数据.
+	 *
+	 * @return array|string
+	 */
+	public function loadFile($file, $json = true) {
+		if (!$file) {
+			return $json ? [] : '';
+		}
+		try {
+			$ssns    = App::cfg('storage@cms', 'file:path=storage');
+			$storage = new Storage($ssns);
+			$cnt     = $storage->load($file);
+			if ($cnt && $json) {
+				$data = @json_decode($cnt, true);
+
+				return $data ? $data : [];
+			}
+
+			return $cnt ? $cnt : '';
+		} catch (\Exception $e) {
+			return $json ? [] : '';
+		}
+	}
+
+	/**
+	 * @param $np
+	 * @param $opath
+	 *
+	 * @return bool
+	 * @throws \Exception
+	 */
 	public function moveNode($np, $opath) {
 		$len          = strlen($opath) + 1;
 		$data['path'] = imv("CONCAT('$np',SUBSTR(path,$len))")->noquote();
@@ -143,9 +611,61 @@ class CmsPage extends Table {
 		return true;
 	}
 
-	public function delNode($id) {
-		$path = $this->select('path')->where(['id' => $id])->get('path');
+	/**
+	 * 发布页面
+	 *
+	 * @param string|int                     $id   页面ID
+	 * @param array                          $data 页面数据
+	 * @param \wulaphp\db\DatabaseConnection $db
+	 * @param string|int                     $uid
+	 *
+	 * @return bool
+	 */
+	private function publishPage($id, $data, $db = null, $uid = 0) {
+		$db = $db ? $db : $this->dbconnection;
+		if (!$data || !$id) {
+			return false;
+		}
+		try {
+			//更新tags
+			if ($data['tags']) {
+				//TODO 更新tags
+			}
+			//更新flags
+			if ($data['flags']) {
+				//TODO 更新flags
+			}
 
-		return $this->update(['status' => 2], ['path LIKE' => $path . '%', 'status' => 1]);
+			//更新URL
+			$key = md5($data['url']);
+			$rt  = $db->queryOne('SELECT route FROM {cms_router} WHERE id=' . $id);
+			if ($rt) {
+				if ($rt['route'] != $key) {
+					//更新路由
+					if (!$db->cudx('UPDATE {cms_router} SET route = %s WHERE id = %d', $key, $id)) {
+						return false;
+					}
+					//更新页面URL
+					if (!$db->cudx('UPDATE {cms_page} SET url = %s WHERE id = %d', $data['url'], $id)) {
+						return false;
+					}
+				}
+			} else {
+				if (!$db->cud('INSERT INTO {cms_router}(route,id) VALUES(%s,%d)', $key, $id)) {
+					return false;
+				}
+			}
+			//更新版本为已发布状态
+			if (!$db->cudx('UPDATE {cms_page_rev} SET status = 3,publisher=' . intval($uid) . ',publish_time=' . time() . ' WHERE page_id = %d', $id)) {
+				return false;
+			}
+			//通知页面发布了
+			fire('cms\on' . ucfirst($data['model_refid']) . 'PagePublished', $data, $db);
+			fire('cms\onPagePublished', $data, $db);
+
+			return true;
+		} catch (\Exception $e) {
+			return false;
+		}
 	}
 }
