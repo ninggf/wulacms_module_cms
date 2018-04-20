@@ -15,4 +15,11 @@
         {/foreach}
     </tr>
 {/foreach}
+{if $row}
+    <tr>
+        <td colspan="{$colSpan+1}">
+            <pre>{$row|var_export}</pre>
+        </td>
+    </tr>
+{/if}
 </tbody>

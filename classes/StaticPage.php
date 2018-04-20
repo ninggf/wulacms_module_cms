@@ -72,7 +72,7 @@ class StaticPage extends ModelDoc {
 		$where['CPF.channel'] = $chid;
 		$where['CPF.model']   = $mid;
 
-		$q = $table->alias('CP')->select('CPF.page_id,CPF.title2,CP.url,CU.nickname AS create_uid,UU.nickname AS update_uid,PU.nickname AS publisher,CP.create_time AS create_time,CPF.update_time AS update_time,CPR.publish_time AS publish_time')->page($page, $limit);
+		$q = $table->alias('CP')->select('CPF.page_id,CPF.title2,CPF.template_file,CP.url,CU.nickname AS create_uid,UU.nickname AS update_uid,PU.nickname AS publisher,CP.create_time AS create_time,CPF.update_time AS update_time,CPR.publish_time AS publish_time')->page($page, $limit);
 		if ($status == '3' || $status == '4' || $status == '0') {//从cms_page_rev表读取
 			$where['CPF.status'] = $status > 0 ? $status - 2 : 0;//0=>草稿,1=>待审核，2=>待发布
 			$q->join('{cms_page_rev} AS CPF', 'CPF.page_id = CP.id');
@@ -132,6 +132,11 @@ class StaticPage extends ModelDoc {
 			'field' => 'title2',
 			'title' => '页面名称',
 			'width' => 200
+		];
+		$cols[0][ ++$i ] = [
+			'field' => 'template_file',
+			'title' => '模板',
+			'width' => 150
 		];
 		$cols[0][ ++$i ] = [
 			'field' => 'update_time',

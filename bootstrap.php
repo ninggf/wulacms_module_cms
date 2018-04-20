@@ -8,7 +8,6 @@ use cms\classes\Catagory;
 use cms\classes\CmsDispatcher;
 use cms\classes\ds\PageDatasource;
 use cms\classes\DynamicPage;
-use cms\classes\form\CmsDomainForm;
 use cms\classes\StaticPage;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
@@ -131,22 +130,6 @@ class CmsModule extends CmfModule {
 		$acl->addOperate('del', '删除');
 	}
 
-	/*
-	 * get the theme  from  the domain
-	 */
-	public function get_theme() {
-		if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] && $_SERVER['HTTPS'] != 'off') {
-			$schema = 'https://';
-		} else {
-			$schema = 'http://';
-		}
-		$domain    = $schema . $_SERVER ['HTTP_HOST'];
-		$cms_table = new CmsDomainForm();
-		$theme     = $cms_table->select('theme')->where(['domain' => $domain])->get('theme');
-
-		return $theme;
-	}
-
 	/**
 	 * 注册内容模型
 	 *
@@ -194,7 +177,6 @@ class CmsModule extends CmfModule {
 	 * provide hook to template
 	*/
 	protected function bind() {
-		bind('get_theme', [$this, 'get_theme']);
 		bind('cms\onCatagoryPagePublished', '&\cms\classes\Catagory');
 	}
 }

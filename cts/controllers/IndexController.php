@@ -24,12 +24,9 @@ class IndexController extends IFramePageController {
 		$data = [];
 		$ds   = get_cts_datasource();
 		foreach ($ds as $d => $dsi) {
-			$form = $dsi->getCondForm();
-			if ($form) {
-				$ddd['id']     = $d;
-				$ddd['name']   = $dsi->getName();
-				$data['dss'][] = $ddd;
-			}
+			$ddd['id']     = $d;
+			$ddd['name']   = $dsi->getName();
+			$data['dss'][] = $ddd;
 		}
 
 		return $this->render($data);
@@ -45,11 +42,10 @@ class IndexController extends IFramePageController {
 		}
 		$dsi  = $dss[ $ds ];
 		$form = $dsi->getCondForm();
-		if (!$form) {
-			return 'no configuration form found for ' . $ds;
+		$data = ['ds' => $ds];
+		if ($form) {
+			$data['form'] = BootstrapFormRender::v($form);
 		}
-		$data         = ['ds' => $ds];
-		$data['form'] = BootstrapFormRender::v($form);
 		$data['cols'] = $dsi->getCols();
 
 		return view($data);
@@ -65,13 +61,14 @@ class IndexController extends IFramePageController {
 		}
 		$dsi  = $dss[ $ds ];
 		$form = $dsi->getCondForm();
-		if (!$form) {
-			return '<tbody></tbody>';
-		}
+
 		$data['cols']    = $dsi->getCols();
 		$data['colSpan'] = count($data['cols']);
-
-		$con          = $form->inflate();
+		if ($form) {
+			$con = $form->inflate();
+		} else {
+			$con = [];
+		}
 		$rows         = get_cts_from_datasource($ds, $con);
 		$data['rows'] = $rows->toArray();
 

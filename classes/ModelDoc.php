@@ -21,6 +21,7 @@ use backend\form\RadioField;
 use backend\form\SelectField;
 use backend\form\TextareaField;
 use backend\form\TextField;
+use backend\form\WysiwygField;
 use cms\classes\form\DefaultPageForm;
 use wulaphp\app\App;
 
@@ -338,8 +339,8 @@ abstract class ModelDoc {
 			$fields[ FileUploaderField::class ]     = new FileUploaderField('', null);
 			$fields[ HiddenField::class ]           = new HiddenField('', null);
 			$fields[ PasswordField::class ]         = new PasswordField('', null);
-
-			$fields = apply_filter('cms\regFormControll', $fields);
+			$fields[ WysiwygField::class ]          = new WysiwygField('', null);
+			$fields                                 = apply_filter('cms\regFormControll', $fields);
 		}
 
 		return $fields;

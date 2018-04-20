@@ -18,6 +18,17 @@ class CmsDispatcher implements IURLDispatcher {
 	private $domain;
 	private $next = true;//是否解析动态页
 
+	public function __construct() {
+		//返回域名配置的主题
+		bind('get_theme', function ($th) {
+			if ($th == 'default') {
+				$th = aryget('theme', self::getCurrentDomain(), 'default');
+			}
+
+			return $th;
+		}, 0);
+	}
+
 	/**
 	 * 分发URL.
 	 * 一旦有一个分发器返回View实例，则立即返回，停止分发其它的.
@@ -39,13 +50,6 @@ class CmsDispatcher implements IURLDispatcher {
 		if (!$this->domain) {
 			return null;
 		}
-		//绑定模板目录
-		$theme = aryget('theme', $this->domain, 'default');
-		if ($theme != 'default') {
-			bind('get_theme', function ($th) use ($theme) {
-				return $theme;
-			}, 0);
-		}
 		//网站离线
 		if ($this->domain['offline']) {
 			return template('offline.tpl');
@@ -63,6 +67,29 @@ class CmsDispatcher implements IURLDispatcher {
 
 			return $view;
 		}
+	}
+
+	/**
+	 * 获取当前域名数据.
+	 *
+	 * @return array
+	 */
+	public static function getCurrentDomain() {
+		static $domain = null;
+		if ($domain === null) {
+			try {
+				$db     = App::db();
+				$domain = $db->queryOne('SELECT * FROM {cms_domain} WHERE domain = %s LIMIT 0,1', VISITING_DOMAIN);
+				if (!$domain) {
+					$domain = $db->queryOne('SELECT * FROM {cms_domain} WHERE is_default = 1 LIMIT 0,1');
+				}
+
+			} catch (\Exception $e) {
+				$domain = [];
+			}
+		}
+
+		return $domain;
 	}
 
 	/**
@@ -200,16 +227,8 @@ class CmsDispatcher implements IURLDispatcher {
 	 * @return array|bool
 	 */
 	private function checkDomain() {
-		$domain = false;
-		try {
-			$db     = App::db();
-			$domain = $db->queryOne('SELECT * FROM {cms_domain} WHERE domain = %s LIMIT 0,1', VISITING_DOMAIN);
-			if (!$domain) {
-				$domain = $db->queryOne('SELECT * FROM {cms_domain} WHERE is_default = 1 LIMIT 0,1');
-			}
-		} catch (\Exception $e) {
+		$domain = self::getCurrentDomain();
 
-		}
 		if ($domain) {
 			//强制https访问.
 			if ($domain['is_https'] && !Request::isHttps()) {
