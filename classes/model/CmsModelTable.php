@@ -59,6 +59,29 @@ class CmsModelTable extends Table {
 	}
 
 	/**
+	 * 获取模型的属性.
+	 *
+	 * @param string $refid
+	 *
+	 * @return array
+	 */
+	public function getFlags($refid) {
+		$flags = $this->get(['refid' => $refid], 'flags')->get('flags');
+		if ($flags) {
+			$flags  = explode(',', $flags);
+			$rflags = [];
+			foreach ($flags as $f) {
+				$rf            = trim($f);
+				$rflags[ $rf ] = $rf;
+			}
+
+			return $rflags;
+		}
+
+		return [];
+	}
+
+	/**
 	 * 安装一个模型.
 	 *
 	 * @param string $name

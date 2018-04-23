@@ -113,20 +113,18 @@ $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_field` (
 $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_tag` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `page_id` INT UNSIGNED NOT NULL COMMENT '页面编号',
-    `status` TINYINT UNSIGNED NOT NULL DEFAULT 1,
     `tag` VARCHAR(16) NOT NULL COMMENT '标签',
     PRIMARY KEY (`id`),
     INDEX `IDX_PAGEID` (`page_id` ASC),
-    INDEX `IDX_TAG` (`tag` ASC, `status` ASC)
+    INDEX `IDX_TAG` (`tag` ASC )
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='标签页，发布时同步'";
 
 $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_flag` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `page_id` INT UNSIGNED NOT NULL,
-    `status` TINYINT UNSIGNED NOT NULL DEFAULT 1,
     `flag` VARCHAR(16) NOT NULL,
     PRIMARY KEY (`id`),
-    INDEX `IDX_SMF` (`flag` ASC, `status` ASC)
+    INDEX `IDX_SMF` (`flag` ASC)
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='页面标志，发布时同步过来'";
 
 $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_rev` (

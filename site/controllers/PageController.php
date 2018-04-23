@@ -321,6 +321,31 @@ class PageController extends IFramePageController {
 	}
 
 	/**
+	 * 删除或放入回收站。
+	 *
+	 * @param string $id
+	 * @param string $force
+	 *
+	 * @acl   del:site/page
+	 * @return \wulaphp\mvc\view\JsonView
+	 */
+	public function del($id, $force = '') {
+		$table = new CmsPage();
+
+		$table->uid = $this->passport->uid;
+		if ($force) {
+			$rst = $table->hardDeletePage($id, $error);
+		} else {
+			$rst = $table->deletePage($id, $error);
+		}
+		if ($rst) {
+			return Ajax::reload('#content-grid', '页面已经放入回收站');
+		} else {
+			return Ajax::error('页面无法放入回收站:' . ($error ? $error : ''));
+		}
+	}
+
+	/**
 	 * 从回收站还原栏目
 	 *
 	 * @param string $id

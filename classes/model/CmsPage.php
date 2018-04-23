@@ -3,6 +3,7 @@
 namespace cms\classes\model;
 
 use cms\classes\ModelDoc;
+use cms\classes\Pinyin;
 use wula\cms\Storage;
 use wulaphp\app\App;
 use wulaphp\db\DatabaseConnection;
@@ -45,7 +46,10 @@ SQL;
 			return null;
 		}
 		if ($page['data_file']) {
-			$page['fields'] = $this->loadFile($page['data_file']);
+			$fields = $this->loadFile($page['data_file']);
+			if ($fields) {
+				$page = array_merge($fields, $page);
+			}
 		}
 		//加载页面扩展内容
 		$this->loadAddon($page, $pageInfo);
@@ -117,7 +121,6 @@ SQL;
 			return false;
 		}
 
-		$rt['route'] = md5($page['url']);
 		try {
 			$this->dbconnection->start();
 			$page['ver']    = 0;
@@ -125,9 +128,16 @@ SQL;
 			$id             = $this->insert($page);
 			if ($id) {
 				//创建路由
-				$rt['id'] = $id;
+				$rt['id']   = $id;
+				$page['id'] = $id;
 				try {
-					$rst = $this->dbconnection->insert($rt)->into('{cms_router}')->exec();
+					if (strpos($page['url'], '}')) {//解析URL。
+						$data['url'] = $page['url'] = $this->parseURL($page, $data);
+						$this->update(['url' => $data['url']], $id);
+					}
+
+					$rt['route'] = md5($page['url']);
+					$rst         = $this->dbconnection->insert($rt)->into('{cms_router}')->exec();
 				} catch (\Exception $ee) {
 					$rst = false;
 				}
@@ -267,6 +277,48 @@ SQL;
 				if (!$rst) {
 					throw_exception($doc->last_error());
 				}
+				fire('cms\onPageRecycled', $id);
+			} else {
+				throw_exception('内容模型不存在');
+			}
+
+			return true;
+		});
+		if (!$rst) {
+			$error = $this->errors;
+		}
+
+		return $rst;
+	}
+
+	/**
+	 * 永久删除页面。
+	 *
+	 * @param string|int $id
+	 * @param null       $error
+	 *
+	 * @return bool|mixed|null
+	 */
+	public function hardDeletePage($id, &$error = null) {
+		$id = intval($id);
+		if (!$id) {
+			$error = '页面ID为空';
+
+			return false;
+		}
+		$rst = $this->trans(function (DatabaseConnection $dbx) use ($id) {
+			$page = $this->loadFields($id, false);
+			if (isset($page['model_id']) && $page['model_id']) {
+				$doc = ModelDoc::getDoc($page['model_id']);
+				if (!$doc) {
+					throw_exception('内容模型实现不存在');
+				}
+				$doc->transDb($dbx);
+				$rst = $doc->delete($page, $this->uid);
+				if (!$rst) {
+					throw_exception($doc->last_error());
+				}
+				fire('cms\onPageDeleted', $id);
 			} else {
 				throw_exception('内容模型不存在');
 			}
@@ -311,6 +363,7 @@ SQL;
 				if (!$rst) {
 					throw_exception($doc->last_error());
 				}
+				fire('cms\onPageRestored', $id);
 			} else {
 				throw_exception('内容模型不存在');
 			}
@@ -374,18 +427,23 @@ SQL;
 		$newVer           = false;
 		if (!isset($data['ver']) || !$data['ver']) {
 			$nv = $db->queryOne('SELECT MAX(ver) AS new_ver FROM {cms_page_rev} WHERE page_id = ' . $id);
-			if ($nv && $nv['new_ver'] && $vcEnabled) {//开启版本控制
-				$nv = $nv['new_ver'] + 1;
+			if ($nv && $nv['new_ver']) {
+				if ($vcEnabled) {//开启版本控制
+					$nv     = $nv['new_ver'] + 1;
+					$newVer = true;
+				} else {
+					$nv = $nv['new_ver'];
+				}
 			} else {
-				$nv = 1;
+				$nv     = 1;
+				$newVer = true;
 			}
 			$fields['ver'] = $nv;
-			$newVer        = true;
 		} else {
 			$fields['ver'] = $data['ver'];
 		}
 		//版本数据存储路径
-		$file = 'c' . ($id % 10) . '/data@' . $fields['ver'];
+		$file = 'c' . ($id % 10) . '/data@' . $id . '.' . $fields['ver'];
 		if (!$this->store($file, $data)) {
 			return false;
 		}
@@ -611,6 +669,67 @@ SQL;
 		return true;
 	}
 
+	private function parseURL($page, $data) {
+		$arg = [
+			'aid'         => $page['id'],
+			'tid'         => $data ['channel'],
+			'model'       => $data ['model_refid'],
+			'mid'         => $data ['model'],
+			'create_time' => $page ['create_time'],
+			'path'        => trim($data ['path'], '/'),
+			'title'       => $data ['title']
+		];
+
+		return $page['url'] = $this->parse_page_url($page['url'], $arg);
+	}
+
+	private function parse_page_url($pattern, $data) {
+		static $ps = [
+			'{aid}',//0
+			'{Y}',//1
+			'{M}',//2
+			'{D}',//3
+			'{cc}',//4
+			'{tid}',//5
+			'{model}',//6
+			'{mid}',//7
+			'{path}',//8
+			'{rpath}',//9
+			'{title}',//10
+			'{py}'//11
+		];
+		$pattern = @preg_replace('/\s+/', '-', $pattern);
+		$r [0]   = isset ($data ['aid']) ? $data ['aid'] : 0;
+
+		if (isset ($data ['create_time']) && $data['create_time']) {
+			$time = $data ['create_time'];
+		} else {
+			$time = time();
+		}
+		$r [1] = date('Y', $time);
+		$r [2] = date('m', $time);
+		$r [3] = date('d', $time);
+
+		$r [4] = 'cc';
+		$r [5] = isset ($data ['tid']) ? $data ['tid'] : 0;
+		$r [6] = isset ($data ['model']) ? $data ['model'] : 'page';
+		$r [7] = isset ($data ['mid']) ? $data ['mid'] : '0';
+
+		if (isset ($data ['path']) && !empty ($data ['path'])) {
+			$r [8] = trim($data ['path'], '/');
+			$paths = explode('/', $r [8]);
+			array_shift($paths);
+			$r [9] = implode('/', $paths);
+		} else {
+			$r [8] = '';
+			$r [9] = '';
+		}
+		$r [10] = isset ($data ['title']) ? preg_replace('/\s+/', '-', $data ['title']) : '';
+		$r[11]  = Pinyin::c($r[10]);
+
+		return ltrim(str_replace($ps, $r, $pattern), '/');
+	}
+
 	/**
 	 * 发布页面
 	 *
@@ -628,15 +747,44 @@ SQL;
 		}
 		try {
 			//更新tags
-			if ($data['tags']) {
-				//TODO 更新tags
+			if (!$db->cudx('DELETE FROM {cms_page_tag} WHERE page_id = %d', $id)) {
+				return false;
+			}
+			if (isset($data['tags']) && $data['tags']) {
+				$tags = @preg_split('/[\s,|，]+/u', trim($data['tags']));
+				if ($tags) {
+					$tagDatas     = [];
+					$t['page_id'] = $id;
+					foreach ($tags as $tag) {
+						$t['tag']   = $tag;
+						$tagDatas[] = $t;
+					}
+					$db->inserts($tagDatas)->into('{cms_page_tag}')->exec();
+				}
 			}
 			//更新flags
-			if ($data['flags']) {
-				//TODO 更新flags
+			if (!$db->cudx('DELETE FROM {cms_page_flag} WHERE page_id = %d', $id)) {
+				return false;
+			}
+
+			if (isset($data['flags']) && $data['flags']) {
+				$flags = @explode(',', $data['flags']);
+				if ($flags) {
+					$tagDatas     = [];
+					$f['page_id'] = $id;
+					foreach ($flags as $tag) {
+						$f['flag']  = $tag;
+						$tagDatas[] = $f;
+					}
+					$db->inserts($tagDatas)->into('{cms_page_flag}')->exec();
+				}
 			}
 
 			//更新URL
+			if (strpos($data['url'], '}')) {
+				$data['url'] = $this->parseURL($data, $data);
+			}
+
 			$key = md5($data['url']);
 			$rt  = $db->queryOne('SELECT route FROM {cms_router} WHERE id=' . $id);
 			if ($rt) {
@@ -651,6 +799,10 @@ SQL;
 					}
 				}
 			} else {
+				//更新页面URL
+				if (!$db->cudx('UPDATE {cms_page} SET url = %s WHERE id = %d', $data['url'], $id)) {
+					return false;
+				}
 				if (!$db->cud('INSERT INTO {cms_router}(route,id) VALUES(%s,%d)', $key, $id)) {
 					return false;
 				}

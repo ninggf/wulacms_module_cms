@@ -1,4 +1,4 @@
-<div class="wulaui">
+<div class="wulaui max1000">
     <section class="p-md m-b-md">
         <form action="{'cms/site/page/save'|app}" id="PageForm" name="PageForm" method="post" class="form" role="form"
               data-validate="{$validate_rules|escape}" data-ajax data-loading>
@@ -14,9 +14,8 @@
             {if $dform}
                 {$dform|render}
             {/if}
-            <div class="line line-dashed line-lg pull-in"></div>
             <div class="form-group">
-                <div class="col-sm-4 col-sm-offset-2">
+                <div class="col-sm-4 col-sm-offset-4">
                     <button type="reset" id="reset-btn" class="btn btn-default">重置</button>
                     <button type="submit" class="btn btn-primary">保存</button>
                 </div>
@@ -26,7 +25,26 @@
 </div>
 <script type="text/javascript">
 	layui.use(['jquery', 'layer', 'wulaui'], function ($, layer) {
-		$('#PageForm').on('ajax.success', function (e, data) {
+		let imgUploaded = false;
+		$('#PageForm').on('ajax.before', function () {
+			let uploader = $('[data-uploader]'), hasImg = uploader.length;
+			//检查图片是否全部上传
+			if (hasImg && !imgUploaded) {
+				uploader.on('uploader.done', function () {
+					hasImg--;
+					if (!hasImg) {
+						//全部上传完成后再提交
+						imgUploaded = true;
+						$('#PageForm').trigger('submit');
+					}
+				});
+				uploader.each(function (i, up) {
+					$(up).data('uploaderObj').start();
+				});
+				return false;
+			}
+		}).on('ajax.success', function (e, data) {
+			imgUploaded = false;//再次保存时需要检查图片是否上传。
 			if (data && data.code === 200 && data.args) {
 				if (top.jqTabmenu) {
 					if (data.args.isNew) {

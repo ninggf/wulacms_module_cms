@@ -77,11 +77,21 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], function 
 				me.cModel = $(this).data('modelData');
 				me.reload(me.cNode, me.cModel);
 			}).on('ajax.before', 'a[lay-event]', function () {
-				//console.log(['ajax', this]);
+				var curpage = $(this).data('curpage'),
+				    act = curpage.event,
+				    data = curpage.data;
+				if (act === 'edit' && data.status === 2) {
+					wulaui.toast.warning('不能编辑回收站里的内容');
+					return false;
+				}
 			}).on('click', '#m-name', function () {
 				me.reload(me.cNode, me.cModel);
 			});
-
+			$('#content-grid').data('loaderObj', {
+				reload: function reload() {
+					me.cntGrid.reload();
+				}
+			});
 			//初始化内容表格
 			me.cntGrid = table.render({
 				elem: '#content-grid',
@@ -130,6 +140,15 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], function 
 						btn.data('ogurl', url);
 					}
 					url += obj.data.page_id;
+					if (obj.event === 'del') {
+						if (obj.data.status === 2) {
+							url += '/1';
+							btn.data('confirm', '你真的要将其永久删除吗?');
+						} else {
+							btn.data('confirm', '你真的要将其放入回收站吗?');
+						}
+					}
+					btn.data('curpage', obj);
 					btn.attr('href', url);
 					if (btn.data('tab') !== undefined && btn.data('title')) {
 						btn.data('title', btn.data('title').replace('{page_id}', obj.data.page_id));
@@ -142,13 +161,8 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], function 
 		reload: function reload(node, m) {
 			if (node && node.models.length > 0) {
 				var model = m || node.models[node.models.length - 1],
-				    cols = this.gridCols[model.refid] ? this.gridCols[model.refid] : [],
-				    cCols = false;
+				    cols = this.gridCols[model.refid] ? this.gridCols[model.refid] : [];
 				$('#m-name').html(model.name);
-				if (model !== this.cModel) {
-					this.cModel = model;
-					cCols = true;
-				}
 				//重新加载内容列表
 				this.sortf.clear();
 				this.searchParams.chid = node.id;
@@ -170,9 +184,8 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], function 
 						type: 'desc'
 					}
 				};
-				if (cCols) {
-					opts.cols = cols;
-				}
+
+				opts.cols = cols;
 				this.cntGrid.reload(opts);
 			} else {
 				this.searchParams.chid = 0;
@@ -234,7 +247,6 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], function 
 				var nd = targetNode.getParentNode();
 				nid = nd ? nd.id : 0;
 			}
-			console.log(['move', cid, 'from', oid, 'to', nid, moveType, tid]);
 			wulaui.ajax.get(wulaui.app('cms/site/channel/move/'), {
 				cid: cid,
 				oid: oid,

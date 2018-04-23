@@ -23,6 +23,7 @@ use backend\form\TextareaField;
 use backend\form\TextField;
 use backend\form\WysiwygField;
 use cms\classes\form\DefaultPageForm;
+use cms\classes\model\CmsPage;
 use wulaphp\app\App;
 
 /**
@@ -212,19 +213,51 @@ abstract class ModelDoc {
 	 * @return bool
 	 */
 	public function delete($id, $uid) {
-		return true;
+		$db    = $this->transDb();
+		$table = new CmsPage($db);
+		if (is_array($id)) {
+			$page = $id;
+		} else {
+			$page = $table->loadFields($id, false);
+		}
+
+		$rst = $db->cud('DELETE FROM {cms_page} WHERE id = %d AND status = 2', $page['id']);
+		if ($rst) {
+			$data_files = $db->query('select data_file from {cms_page_rev} where page_id = %d', $page['id']);
+			foreach ($data_files as $data_file) {
+				if (!$table->deleteFile($data_file['data_file'])) {
+					return false;
+				}
+			}
+			$rst = $rst && $db->cudx('DELETE FROM {cms_page_rev} WHERE page_id = %d', $page['id']);
+			$rst = $rst && $db->cudx('DELETE FROM {cms_page_field} WHERE page_id = %d', $page['id']);
+			$rst = $rst && $db->cudx('DELETE FROM {cms_page_tag} WHERE page_id = %d', $page['id']);
+			$rst = $rst && $db->cudx('DELETE FROM {cms_page_flag} WHERE page_id = %d', $page['id']);
+			$rst = $rst && $db->cudx('DELETE FROM {cms_router} WHERE id = %d', $page['id']);
+		}
+
+		return $rst;
 	}
 
 	/**
-	 * 放入回收站.
+	 * 放入回收站
 	 *
-	 * @param string|int|array $id
-	 * @param string|int       $uid
+	 * @param array|int|string $id
+	 * @param int|string       $uid
 	 *
 	 * @return bool
 	 */
 	public function recycle($id, $uid) {
-		return true;
+		$db = $this->transDb();
+		if (is_array($id)) {
+			$page = $id;
+		} else {
+			$table = new CmsPage($db);
+			$page  = $table->loadFields($id, false);
+		}
+		$rst = $db->cudx('UPDATE {cms_page} SET origin_status = status, status=2 WHERE id = %d', $page['id']);
+
+		return $rst;
 	}
 
 	/**
@@ -236,6 +269,17 @@ abstract class ModelDoc {
 	 * @return bool
 	 */
 	public function restore($id, $uid) {
+		$db = $this->transDb();
+		if (is_array($id)) {
+			$page = $id;
+		} else {
+			$table = new CmsPage($db);
+			$page  = $table->loadFields($id, false);
+		}
+		if (!$db->cudx('UPDATE {cms_page} SET status = origin_status WHERE id = %d', $page['id'])) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -247,7 +291,7 @@ abstract class ModelDoc {
 	 * @return array
 	 */
 	protected function commonData($data) {
-		$page['noindex']     = $data['noindex'];
+		$page['noindex']     = intval(aryget('noindex', $data['noindex'], 0));
 		$page['expire']      = intval($data['expire']);
 		$page['channel']     = $data['channel']['chid'];
 		$page['model']       = $data['model']['id'];
