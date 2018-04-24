@@ -75,9 +75,9 @@ class ArticlePageForm extends FormTable {
 	 * 页面缓存
 	 * @var \backend\form\TextField
 	 * @type int
-	 * @digits
+	 * @pattern (/^(-1|0|[1-9]\d*)$/) => 只能是大于-1的整数.
 	 * @layout 4,col-xs-4
-	 * @note   不填写将使用栏目设置
+	 * @note   -1不缓存0默认,单位秒.
 	 */
 	public $expire = 0;
 
@@ -109,31 +109,45 @@ class ArticlePageForm extends FormTable {
 	 * 作者
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 6,col-xs-2
+	 * @layout 6,col-xs-3
 	 */
 	public $author;
 	/**
 	 * 来源
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 6,col-xs-2
+	 * @layout 6,col-xs-3
 	 */
 	public $source;
 	/**
-	 * 相关页面
-	 * @var \backend\form\TextField
+	 * 发布时间
+	 * @var \backend\form\DatepickerField
 	 * @type string
-	 * @layout 6,col-xs-8
-	 * @note   多个页面使用','分隔
+	 * @layout 6,col-xs-3
 	 */
-	public $related_pages;
+	public $publish_day;
+	/**
+	 * &nbsp;
+	 * @var \backend\form\TimepickerField
+	 * @type string
+	 * @layout 6,col-xs-3
+	 */
+	public $publish_hm;
 	/**
 	 * 关键词
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 7,col-xs-12
+	 * @layout 7,col-xs-6
 	 */
 	public $keywords = '';
+	/**
+	 * 相关页面
+	 * @var \backend\form\TextField
+	 * @type string
+	 * @layout 7,col-xs-6
+	 * @note   多个页面使用','分隔
+	 */
+	public $related_pages;
 	/**
 	 * 描述
 	 * @var \backend\form\TextareaField

@@ -21,6 +21,7 @@ use backend\form\RadioField;
 use backend\form\SelectField;
 use backend\form\TextareaField;
 use backend\form\TextField;
+use backend\form\TimepickerField;
 use backend\form\WysiwygField;
 use cms\classes\form\DefaultPageForm;
 use cms\classes\model\CmsPage;
@@ -182,14 +183,6 @@ abstract class ModelDoc {
 	 * @param \wulaphp\router\UrlParsedInfo $pageInfo 页面信息
 	 */
 	public function load(&$page, $pageInfo) {
-	}
-
-	/**
-	 * 加载内容.
-	 *
-	 * @param array $ids 页面ID
-	 */
-	public function loads($ids) {
 	}
 
 	/**
@@ -380,6 +373,7 @@ abstract class ModelDoc {
 			$fields[ MultipleCheckboxFiled::class ] = new MultipleCheckboxFiled('', null);
 			$fields[ ComboxField::class ]           = new ComboxField('', null);
 			$fields[ DatepickerField::class ]       = new DatepickerField('', null);
+			$fields[ TimepickerField::class ]       = new TimepickerField('', null);
 			$fields[ FileUploaderField::class ]     = new FileUploaderField('', null);
 			$fields[ HiddenField::class ]           = new HiddenField('', null);
 			$fields[ PasswordField::class ]         = new PasswordField('', null);

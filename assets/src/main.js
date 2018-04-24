@@ -102,7 +102,6 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 			});
 			//排序
 			table.on('sort(grid)', obj => {
-				console.log(['sort', obj]);
 				if (obj.type) {
 					me.sortf.put(obj.field, obj.type === 'desc' ? 'd' : 'a')
 				} else {

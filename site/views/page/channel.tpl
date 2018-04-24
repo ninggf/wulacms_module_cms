@@ -41,7 +41,7 @@
                                                {if $model.enabled}checked="checked"{/if}/>
                                     </td>
                                     <td>
-                                        <input style="width: 100%" class="form-control p-xs" type="text"
+                                        <input style="width: 100%" class="form-control p-xs urlp" type="text"
                                                name="bm[{$model.mid}][url]" value="{$model.url_pattern|escape}">
                                     </td>
                                     <td>
@@ -66,10 +66,55 @@
             </div>
         </form>
     </section>
+    <div id="urlp" class="hidden">
+        {literal}
+            {Y}、{M}、{D} 年月日
+            <br/>
+            {aid}、{cc} 文章ID、36进制的文章ID
+            <br/>
+            {path}、{rpath} 全路径、退一格路径
+            <br/>
+            {tid} 栏目ID
+            <br/>
+            {model}模型
+            <br/>
+            {title} 标题
+            <br/>
+            {py} 标题的拼音
+        {/literal}
+    </div>
 </div>
 <script type="text/javascript">
-	layui.use(['jquery', 'layer', 'wulaui'], function ($, layer, wulaui) {
-		$('#PageForm').on('ajax.success', function (e, data) {
+	layui.use(['jquery', 'layer', 'bootstrap', 'wulaui'], function ($, layer, bt, wulaui) {
+		let imgUploaded = false;
+		$('.urlp').popover({
+			title    : '可用变量',
+			content  : function () {
+				return $('#urlp').html();
+			},
+			html     : true,
+			placement: 'auto top',
+			trigger  : 'focus'
+		});
+		$('#PageForm').on('ajax.before', function () {
+			let uploader = $('[data-uploader]'), hasImg = uploader.length;
+			//检查图片是否全部上传
+			if (hasImg && !imgUploaded) {
+				uploader.on('uploader.done', function () {
+					hasImg--;
+					if (!hasImg) {
+						//全部上传完成后再提交
+						imgUploaded = true;
+						$('#PageForm').trigger('submit');
+					}
+				});
+				uploader.each(function (i, up) {
+					$(up).data('uploaderObj').start();
+				});
+				return false;
+			}
+		}).on('ajax.success', function (e, data) {
+			imgUploaded = false;//再次保存时需要检查图片是否上传。
 			if (data && data.code === 200 && data.args) {
 				if (top.jqTabmenu) {
 					top.jqTabmenu.reload(wulaui.app('cms/site'));

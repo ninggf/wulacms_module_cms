@@ -98,7 +98,7 @@ class ArticlePage extends ModelDoc {
 		$where['CPF.channel'] = $chid;
 		$where['CPF.model']   = $mid;
 
-		$q = $table->alias('CP')->select('CPF.page_id,CP.status,CPF.title,CPF.title2,CPF.author,CPF.source,CPF.flags,CPF.tags,CP.url,CU.nickname AS create_uid,UU.nickname AS update_uid,PU.nickname AS publisher,CP.create_time AS create_time,CPF.update_time AS update_time,CPR.publish_time AS publish_time')->page($page, $limit);
+		$q = $table->alias('CP')->select('CPF.page_id,CP.status,CPF.title,CPF.title2,CPF.author,CPF.source,CPF.flags,CPF.tags,CP.url,CU.nickname AS create_uid,UU.nickname AS update_uid,PU.nickname AS publisher,CP.create_time AS create_time,CPF.update_time AS update_time,CPF.publish_time AS publish_time')->page($page, $limit);
 		if ($status == '3' || $status == '4' || $status == '0') {//从cms_page_rev表读取
 			$where['CPF.status']   = $status > 0 ? $status - 2 : 0;//0=>草稿,1=>待审核，2=>待发布
 			$where['CP.status <>'] = 2;
@@ -106,14 +106,13 @@ class ArticlePage extends ModelDoc {
 			$q->sort('CPF.ver', 'd');
 			$q->field('CPF.ver', 'ver');
 		} else {//从cms_page_field表读取
-			$where['CP.status'] = $status;//1,2
+			$where['CPF.status'] = $status;//1,2
 			$q->join('{cms_page_field} AS CPF', 'CPF.page_id = CP.id');
 			$q->field('CP.ver', 'ver');
 		}
 		$q->join('{user} AS CU', 'CU.id = CP.create_uid');
 		$q->join('{user} AS UU', 'UU.id = CPF.update_uid');
-		$q->join('{cms_page_rev} AS CPR', 'CPR.page_id = CP.id AND CP.ver = CPR.ver');
-		$q->join('{user} AS PU', 'PU.id = CPR.publisher');
+		$q->join('{user} AS PU', 'PU.id = CPF.publisher');
 		$sort = $this->alterSort();
 		$q->sort($sort['name'], $sort['dir'])->where($where);
 		$total = $q->total('CP.id');
@@ -136,6 +135,7 @@ class ArticlePage extends ModelDoc {
 	 */
 	public function load(&$page, $pageInfo) {
 		if (isset($page['content']) && $page['content']) {
+			$page['content'] = str_replace(['<div><br></div>', '<div><br/></div>'], '', $page['content']);
 			//处理分页
 			if (!$pageInfo || $pageInfo->page == PHP_INT_MAX) {
 				$page['content'] = @preg_replace('#(<hr\s*/?>|\[page\])#', '', $page['content']);
@@ -217,6 +217,18 @@ class ArticlePage extends ModelDoc {
 			'width' => 120
 		];
 		$cols[0][ ++$i ] = [
+			'field' => 'publish_time',
+			'title' => '发布时间',
+			'sort'  => true,
+			'width' => 150
+		];
+		$cols[0][ ++$i ] = [
+			'field' => 'publisher',
+			'title' => '发布者',
+			'sort'  => true,
+			'width' => 120
+		];
+		$cols[0][ ++$i ] = [
 			'field' => 'create_time',
 			'title' => '创建时间',
 			'sort'  => true,
@@ -235,9 +247,10 @@ class ArticlePage extends ModelDoc {
 	private function alterSort() {
 		$sort = rqst('sort');
 		if ($sort && $sort['name']) {
-			$sort['name'] = str_replace(['update_', 'create_'], [
+			$sort['name'] = str_replace(['update_', 'create_', 'publish_'], [
 				'CPF.update_',
-				'CP.create_'
+				'CP.create_',
+				'CPF.publish_'
 			], $sort['name']);
 		}
 

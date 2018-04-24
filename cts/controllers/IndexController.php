@@ -66,9 +66,13 @@ class IndexController extends IFramePageController {
 		$data['colSpan'] = count($data['cols']);
 		if ($form) {
 			$con = $form->inflate();
+			$con = array_filter($con, function ($v) {
+				return is_numeric($v) || $v;
+			});
 		} else {
 			$con = [];
 		}
+		unset($con['r404']);
 		$rows         = get_cts_from_datasource($ds, $con);
 		$data['rows'] = $rows->toArray();
 

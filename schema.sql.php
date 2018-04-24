@@ -92,6 +92,7 @@ $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_field` (
     `update_uid` INT UNSIGNED NOT NULL COMMENT '作者',
     `channel` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '栏目',
     `model` INT NOT NULL COMMENT '模型',
+    `status` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '0草稿1发布2删除',
     `path` VARCHAR(64) NOT NULL COMMENT '虚拟路径',
     `title` VARCHAR(96) NULL COMMENT '标题',
     `title2` VARCHAR(64) NULL COMMENT '短标题',
@@ -105,9 +106,18 @@ $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_field` (
     `description` VARCHAR(256) NULL COMMENT '描述',
     `image` VARCHAR(512) NULL COMMENT '插图',
     `related_pages` TEXT NULL COMMENT '相关页面',
+    `publisher` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '发布人',
+    `publish_time` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '发布时间',
+    `view` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '浏览次数',
+    `cmts` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '评论次数',
+    `dig` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '顶次数',
+    `dig1` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '踩次数',
     PRIMARY KEY (`page_id`),
     INDEX `IDX_TIME` (`update_time` ASC),
-    INDEX `IDX_MODEL` (`path` ASC,`model` ASC)
+    INDEX `IDX_PUB_TIME` (`publish_time` ASC),
+    INDEX `IDX_MODEL` (`model` ASC,`status` ASC),
+    INDEX `IDX_CH_MODEL` (`channel` ASC,`model` ASC,`status` ASC),
+    INDEX `IDX_PATH_M` (`path` ASC,`model` ASC, `status` ASC)
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='cms页面字段'";
 
 $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_tag` (

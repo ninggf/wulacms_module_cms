@@ -52,9 +52,9 @@ class StaticPageForm extends FormTable {
 	 * 缓存时间
 	 * @var \backend\form\TextField
 	 * @type int
-	 * @digits
+	 * @pattern (/^(-1|0|[1-9]\d*)$/) => 只能是大于-1的整数.
 	 * @layout 2,col-xs-2
-	 * @note   0表示系统默认缓存时间
+	 * @note   -1不缓存0系统配置,单位秒.
 	 */
 	public $expire = 0;
 

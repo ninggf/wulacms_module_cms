@@ -50,9 +50,9 @@ class CatagoryForm extends FormTable {
 	 * 缓存时间
 	 * @var \backend\form\TextField
 	 * @type int
-	 * @digits
+	 * @pattern (/^(-1|0|[1-9]\d*)$/) => 只能是大于-1的整数.
 	 * @layout 2,col-xs-3
-	 * @note   0表示系统默认缓存时间
+	 * @note   -1不缓存0系统配置,单位秒.
 	 */
 	public $expire = 0;
 	/**
@@ -93,6 +93,30 @@ class CatagoryForm extends FormTable {
 	 * @layout 3,col-xs-3
 	 */
 	public $template_file2;
+	/**
+	 * 封面插图
+	 * @var \backend\form\FileUploaderField
+	 * @type string
+	 * @layout 5,col-xs-3
+	 * @option {"exts":"jpg,gif,png,jpeg","width":120,"height":90,"noWater":1,"maxFileSize":"1mb"}
+	 */
+	public $image;
+	/**
+	 * 封面插图二
+	 * @var \backend\form\FileUploaderField
+	 * @type string
+	 * @layout 5,col-xs-3
+	 * @option {"exts":"jpg,gif,png,jpeg","width":120,"height":90,"noWater":1,"maxFileSize":"1mb"}
+	 */
+	public $image1;
+	/**
+	 * 封面插图三
+	 * @var \backend\form\FileUploaderField
+	 * @type string
+	 * @layout 5,col-xs-3
+	 * @option {"exts":"jpg,gif,png,jpeg","width":120,"height":90,"noWater":1,"maxFileSize":"1mb"}
+	 */
+	public $image2;
 	/**
 	 * 页面标题
 	 * @var \backend\form\TextField

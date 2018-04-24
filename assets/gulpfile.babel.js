@@ -40,7 +40,7 @@ gulp.task('css', [], function () {
 	let ccss = gulp.src('less/cms.less').pipe(less()).pipe(gulp.dest('css'));
 	if (options.env === 'pro')
 		return ccss.pipe(cssmin())
-			.pipe(rename({extname: '.min.css'}))
+			//.pipe(rename({extname: '.min.css'}))
 			.pipe(gulp.dest('css'));
 });
 // 编译js文件
@@ -56,9 +56,7 @@ gulp.task('js', [], function () {
 
 	if (options.env === 'pro')
 		return js.pipe(uglify())
-			.pipe(rename({
-				extname: '.min.js'
-			}))
+			//.pipe(rename({ extname: '.min.js' }))
 			.pipe(gulp.dest('js'));
 });
 

@@ -6,6 +6,7 @@ use backend\classes\DashboardUI;
 use cms\classes\ArticlePage;
 use cms\classes\Catagory;
 use cms\classes\CmsDispatcher;
+use cms\classes\ds\CrumbDatasource;
 use cms\classes\ds\PageDatasource;
 use cms\classes\DynamicPage;
 use cms\classes\StaticPage;
@@ -168,7 +169,8 @@ class CmsModule extends CmfModule {
 	 * @return array
 	 */
 	public static function regDss($ds) {
-		$ds['page'] = new PageDatasource();
+		$ds['page']  = new PageDatasource();
+		$ds['crumb'] = new CrumbDatasource();
 
 		return $ds;
 	}

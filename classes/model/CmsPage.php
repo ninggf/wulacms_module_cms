@@ -536,10 +536,16 @@ SQL;
 
 		$fields['update_time'] = time();
 		$fields['update_uid']  = $uid ? $uid : (isset($data['update_uid']) ? $data['update_uid'] : $this->uid);
+		$fields['status']      = 1;//发布状态
 		//更新cms_page_field
 		if ($db->update('{cms_page_field}')->set($fields)->where(['page_id' => $id])->exec()) {
 			//更新cms_page
-			if ($db->update('{cms_page}')->set(['ver' => $data['ver'], 'status' => 1])->where(['id' => $id])->exec()) {
+			if ($db->update('{cms_page}')->set([
+				'ver'     => $data['ver'],
+				'status'  => 1,
+				'expire'  => intval($data['expire']),
+				'noindex' => intval($data['noindex'])
+			])->where(['id' => $id])->exec()) {
 				//发布
 				return $this->publishPage($id, $data, $db, $uid ? $uid : $fields['update_uid']);
 			}
@@ -710,7 +716,7 @@ SQL;
 		$r [2] = date('m', $time);
 		$r [3] = date('d', $time);
 
-		$r [4] = 'cc';
+		$r [4] = base_convert($r[0], 10, 36);
 		$r [5] = isset ($data ['tid']) ? $data ['tid'] : 0;
 		$r [6] = isset ($data ['model']) ? $data ['model'] : 'page';
 		$r [7] = isset ($data ['mid']) ? $data ['mid'] : '0';
@@ -807,8 +813,24 @@ SQL;
 					return false;
 				}
 			}
+			$pub_time = time();
+			if ($data['publish_day']) {
+				$pt = $data['publish_day'];
+				if ($data['publish_hm']) {
+					$pt .= ' ' . $data['publish_hm'];
+				}
+				$pub_time1 = @strtotime($pt);
+				if ($pub_time1) {
+					$pub_time = $pub_time1;
+				}
+			}
+
 			//更新版本为已发布状态
-			if (!$db->cudx('UPDATE {cms_page_rev} SET status = 3,publisher=' . intval($uid) . ',publish_time=' . time() . ' WHERE page_id = %d', $id)) {
+			if (!$db->cudx('UPDATE {cms_page_rev} SET status = 3,publisher=' . intval($uid) . ',publish_time=' . $pub_time . ' WHERE page_id = %d', $id)) {
+				return false;
+			}
+			//更新版本为已发布状态
+			if (!$db->cudx('UPDATE {cms_page_field} SET publisher=' . intval($uid) . ',publish_time=' . $pub_time . ' WHERE page_id = %d', $id)) {
 				return false;
 			}
 			//通知页面发布了
