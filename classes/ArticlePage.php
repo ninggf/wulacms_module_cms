@@ -136,6 +136,10 @@ class ArticlePage extends ModelDoc {
 	public function load(&$page, $pageInfo) {
 		if (isset($page['content']) && $page['content']) {
 			$page['content'] = str_replace(['<div><br></div>', '<div><br/></div>'], '', $page['content']);
+			$page['content'] = apply_filter('cms\alterContent', $page['content']);
+			if (!$page['content']) {
+				return;
+			}
 			//处理分页
 			if (!$pageInfo || $pageInfo->page == PHP_INT_MAX) {
 				$page['content'] = @preg_replace('#(<hr\s*/?>|\[page\])#', '', $page['content']);
@@ -258,6 +262,10 @@ class ArticlePage extends ModelDoc {
 	}
 
 	public function getForm($id, &$data) {
+		$data['img_auto_dld']  = App::bcfg('downPic@cms');
+		$data['scws_auto_get'] = App::bcfg('scwsEnabled@cms') && extension_loaded('scws');
+		$data['desc_auto_get'] = App::bcfg('descEnabled@cms') && class_exists('\media\classes\ImageTool');
+
 		return new ArticlePageForm(true);
 	}
 }

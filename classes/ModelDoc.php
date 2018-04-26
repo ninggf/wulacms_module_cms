@@ -17,6 +17,7 @@ use backend\form\FileUploaderField;
 use backend\form\HiddenField;
 use backend\form\MultipleCheckboxFiled;
 use backend\form\PasswordField;
+use backend\form\Plupload;
 use backend\form\RadioField;
 use backend\form\SelectField;
 use backend\form\TextareaField;
@@ -25,6 +26,9 @@ use backend\form\TimepickerField;
 use backend\form\WysiwygField;
 use cms\classes\form\DefaultPageForm;
 use cms\classes\model\CmsPage;
+use cms\classes\scws\Scwser;
+use media\classes\ImageTool;
+use media\Media1Module;
 use wulaphp\app\App;
 
 /**
@@ -283,7 +287,7 @@ abstract class ModelDoc {
 	 *
 	 * @return array
 	 */
-	protected function commonData($data) {
+	protected function commonData(&$data) {
 		$page['noindex']     = intval(aryget('noindex', $data['noindex'], 0));
 		$page['expire']      = intval($data['expire']);
 		$page['channel']     = $data['channel']['chid'];
@@ -293,6 +297,78 @@ abstract class ModelDoc {
 			$page['path'] = $data['channel']['path'] . $data['store_path'] . '/';
 		} else {
 			$page['path'] = $data['channel']['path'];
+		}
+
+		//提取关键词
+		if ((!isset($data['keywords']) || !$data['keywords']) && isset($data['title']) && $data['title'] && $data['scws_auto_get']) {
+			$dict = App::cfg('scwsDict@cms');
+			$cnt  = App::icfgn('scwsCnt@cms', 10);
+			$keys = Scwser::scws($data['title'], $cnt, $dict);
+			if ($keys) {
+				$data['keywords'] = implode(',', $keys);
+			}
+		}
+
+		//提交描述
+		if ((!isset($data['description']) || !$data['description']) && isset($data['content']) && $data['content'] && $data['desc_auto_get']) {
+			$content = cleanhtml2simple($data['content']);
+			$cnt     = App::icfgn('descCnt@cms', 10);
+			if ($content) {
+				$data['description'] = mb_substr($content, 0, $cnt);
+			}
+		}
+
+		//下载远程图片
+		if (isset($data['content']) && $data['content'] && $data['img_auto_dld']) {
+			$exclude_urls = Media1Module::get_media_domains([WWWROOT_DIR]);
+			if (class_exists('\media\classes\ImageTool') && $exclude_urls && $exclude_urls[0] != WWWROOT_DIR) {
+				$content  = $data ['content'];
+				$uploader = Plupload::getUploader();
+				foreach ($exclude_urls as $k => $eurl) {
+					$exclude_urls[ $k ] = parse_url($eurl, PHP_URL_HOST);
+				}
+				if (preg_match_all('#<img.+?src\s*=\s*["\'](https?[^"\']+?)["\'].*?>#im', $content, $ms)) {
+					$images = [];
+					foreach ($ms [1] as $idx => $m) {
+						$info = parse_url($m, PHP_URL_HOST);
+						if ($info && !in_array($info, $exclude_urls)) {
+							$images [ $m ] = [$m, null];
+						}
+					}
+					if ($images) {
+						$watermark        = null;
+						$enable_watermark = App::bcfg('enable_watermark@media', false);
+						if ($enable_watermark) {
+							$watermark = App::cfg('watermark@media');
+							if ($watermark) {
+								$watermark = WWWROOT . $watermark;
+							}
+						}
+						if ($watermark && is_file($watermark)) {
+							$watermarkcfg = [
+								$watermark,
+								App::cfg('watermark_pos@media', 'br'),
+								App::cfg('watermark_min_size@media')
+							];
+						} else {
+							$watermarkcfg = false;
+						}
+
+						$resize_img = App::cfg('resize_img@cms');
+						if ($resize_img) {
+							$resize = explode('x', $resize_img);
+						} else {
+							$resize = [];
+						}
+						$rst = ImageTool::download($images, $uploader, App::icfgn('down_timeout@cms', 30), $watermarkcfg, $resize);
+						foreach ($rst as $old => $new) {
+							$content = str_replace($old, the_media_src($new ['url']), $content);
+						}
+						$data ['content'] = $content;
+					}
+
+				}
+			}
 		}
 
 		return array_merge($data, $page);

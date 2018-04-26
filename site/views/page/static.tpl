@@ -11,8 +11,8 @@
             {if $form}
                 {$form|render}
             {/if}
-            <div class="form-group">
-                <div class="col-sm-4 col-sm-offset-4">
+            <div style="position: fixed;bottom:-10px;left:50%;margin-left: -70px;" class="form-group">
+                <div class="btn-group btn-group-lg">
                     <button type="reset" id="reset-btn" class="btn btn-default">重置</button>
                     <button type="submit" class="btn btn-primary">保存</button>
                 </div>

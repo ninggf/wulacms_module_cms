@@ -5,6 +5,7 @@ namespace cms;
 use backend\classes\DashboardUI;
 use cms\classes\ArticlePage;
 use cms\classes\Catagory;
+use cms\classes\cfg\CmsSetting;
 use cms\classes\CmsDispatcher;
 use cms\classes\ds\CrumbDatasource;
 use cms\classes\ds\PageDatasource;
@@ -158,6 +159,18 @@ class CmsModule extends CmfModule {
 		$ms['cms.main'] = '{/}' . App::res('cms/assets/js/main');
 
 		return $ms;
+	}
+
+	/**
+	 * @param $settings
+	 *
+	 * @return mixed
+	 * @filter backend/settings
+	 */
+	public static function setting($settings) {
+		$settings['cms'] = new CmsSetting();
+
+		return $settings;
 	}
 
 	/**

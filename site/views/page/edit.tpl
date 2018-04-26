@@ -14,8 +14,8 @@
             {if $dform}
                 {$dform|render}
             {/if}
-            <div class="form-group">
-                <div class="col-sm-4 col-sm-offset-4">
+            <div style="position: fixed;bottom:-10px;left:50%;margin-left: -70px;" class="form-group">
+                <div class="btn-group btn-group-lg">
                     <button type="reset" id="reset-btn" class="btn btn-default">重置</button>
                     <button type="submit" class="btn btn-primary">保存</button>
                 </div>
@@ -63,6 +63,11 @@
 							icon : 1,
 							title: '恭喜'
 						}, function (idx) {
+							var page = data.args.page;
+							$("#keywords").val(page.keywords);
+							$('#description').val(page.description);
+							$('#content_editorxx').html(page.content);
+							$('#content').val(page.content);
 							layer.close(idx);
 						}, function (idx) {
 							top.jqTabmenu.close(location);

@@ -70,6 +70,16 @@ class Scwser {
 		return $keywords;
 	}
 
+	/**
+	 * 分词
+	 *
+	 * @param resource   $scws
+	 * @param string     $string
+	 * @param string|int $count
+	 * @param string     $attr
+	 *
+	 * @return array
+	 */
 	private static function doit($scws, $string, $count, $attr) {
 		$keywords = [];
 		$scws->set_duality(false);

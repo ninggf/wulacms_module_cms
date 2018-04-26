@@ -105,68 +105,131 @@ class ArticlePageForm extends FormTable {
 	 * @option {"exts":"jpg,gif,png,jpeg","width":120,"height":90,"noWater":1,"maxFileSize":"1mb"}
 	 */
 	public $image2;
+
+	/**
+	 * 页面内容
+	 * @var \backend\form\WysiwygField
+	 * @type string
+	 * @layout 30,col-xs-12
+	 * @option {"height":500,"btns":"font,size,color,style,link,img,pager"}
+	 */
+	public $content;
+	/**
+	 * 自动下载远程图片
+	 * @var \backend\form\CheckboxField
+	 * @type bool
+	 * @layout 30,col-xs-6
+	 */
+	public $img_auto_dld;
+
 	/**
 	 * 作者
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 6,col-xs-3
+	 * @layout 50,col-xs-3
 	 */
 	public $author;
 	/**
 	 * 来源
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 6,col-xs-3
+	 * @layout 50,col-xs-3
 	 */
 	public $source;
 	/**
 	 * 发布时间
 	 * @var \backend\form\DatepickerField
 	 * @type string
-	 * @layout 6,col-xs-3
+	 * @layout 50,col-xs-3
 	 */
 	public $publish_day;
+
 	/**
 	 * &nbsp;
 	 * @var \backend\form\TimepickerField
 	 * @type string
-	 * @layout 6,col-xs-3
+	 * @layout 50,col-xs-3
 	 */
 	public $publish_hm;
+
+	/**
+	 * 阅读数
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @digits
+	 * @layout 60,col-xs-3
+	 */
+	public $view = 0;
+	/**
+	 * 评论数
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @digits
+	 * @layout 60,col-xs-3
+	 */
+	public $cmts = 0;
+	/**
+	 * 顶次数
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @digits
+	 * @layout 60,col-xs-3
+	 */
+	public $dig = 0;
+	/**
+	 * 踩次数
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @digits
+	 * @layout 60,col-xs-3
+	 */
+	public $dig1 = 0;
 	/**
 	 * 关键词
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 7,col-xs-6
+	 * @layout 70,col-xs-6
 	 */
 	public $keywords = '';
 	/**
-	 * 相关页面
+	 * 相关页面(多个页面使用','分隔)
 	 * @var \backend\form\TextField
 	 * @type string
-	 * @layout 7,col-xs-6
-	 * @note   多个页面使用','分隔
+	 * @layout 70,col-xs-6
 	 */
 	public $related_pages;
+	/**
+	 * 自动提取
+	 * @var \backend\form\CheckboxField
+	 * @type bool
+	 * @layout 70,col-xs-6
+	 */
+	public $scws_auto_get;
 	/**
 	 * 描述
 	 * @var \backend\form\TextareaField
 	 * @type string
-	 * @layout 8,col-xs-12
+	 * @layout 80,col-xs-12
 	 */
 	public $description = '';
 	/**
-	 * 内容
-	 * @var \backend\form\WysiwygField
-	 * @type string
-	 * @layout 9,col-xs-12
-	 * @option {"height":350,"btns":"font,size,color,style,link,img,pager"}
+	 * 自动提取
+	 * @var \backend\form\CheckboxField
+	 * @type bool
+	 * @layout 80,col-xs-6
 	 */
-	public $content;
+	public $desc_auto_get;
+
 
 	public function alterFieldOptions($name, &$options) {
 		if ($this->_tableData && $this->_tableData['id'] && $name == 'url') {
 			$options['readonly'] = true;
+		}
+		if ($name == 'img_auto_dld' && !class_exists('\media\classes\ImageTool')) {
+			$options['disabled'] = true;
+		}
+		if ($name == 'scws_auto_get' && !extension_loaded('scws')) {
+			$options['disabled'] = true;
 		}
 	}
 

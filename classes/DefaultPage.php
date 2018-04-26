@@ -10,7 +10,7 @@
 
 namespace cms\classes;
 
-class DefaultPage extends ModelDoc {
+class DefaultPage extends ArticlePage {
 	private $id;
 	private $name;
 
