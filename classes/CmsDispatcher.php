@@ -8,6 +8,7 @@ use wulaphp\io\Request;
 use wulaphp\mvc\view\View;
 use wulaphp\router\IURLDispatcher;
 use wulaphp\router\Router;
+use wulaphp\router\RouteTableDispatcher;
 use wulaphp\router\UrlParsedInfo;
 
 /**
@@ -40,9 +41,13 @@ class CmsDispatcher implements IURLDispatcher {
 	 * @return View View 实例.
 	 */
 	public function dispatch($url, $router, $parsedInfo) {
-		$route = $this->parseURL($parsedInfo);
+		$route = RouteTableDispatcher::parseURL($parsedInfo);
 		//解析不了
 		if (!$route) {
+			return null;
+		}
+		//检测扩展名,目前只解析以下扩展名
+		if (!preg_match('#^(html?|xml|png|json|txt|gif)$#', $parsedInfo->ext)) {
 			return null;
 		}
 		//域名检测
@@ -106,21 +111,32 @@ class CmsDispatcher implements IURLDispatcher {
 			$page = new CmsPage();
 			$data = $page->load($key, $parsedInfo);
 			if ($data) {
-				$tpl = $data['template_file'] ? $data['template_file'] : ($data['default_tpl'] ? $data['default_tpl'] : '');
+				$tpl = $data['template_file'];
+				if (!$tpl) {
+					$cp  = $parsedInfo->page;
+					$tpl = $data['default_page_tpl'];
+					if ($cp > 1 && $data['list_page_tpl']) {
+						$tpl = $data['list_page_tpl'];
+					}
+				}
 				if (!$tpl) {
 					$this->next = false;
 
 					return null;
 				}
 				@define('CMS_REAL_PAGE', $data);
+				if (empty($data['expire'])) {
+					$data['expire'] = $this->domain['expire'];
+				}
 				if ($data['expire']) {
 					@define('CACHE_EXPIRE', $data['expire']);
 				}
 				$data['urlInfo']    = $parsedInfo;
 				$data['routerArgs'] = [];
 				$parsedInfo->setPageData($data);
+				$headers = ['Content-Type' => $parsedInfo->contentType];
 
-				return template($tpl, $data);
+				return template($tpl, $data, $headers);
 			}
 		} catch (\Exception $e) {
 
@@ -171,6 +187,9 @@ class CmsDispatcher implements IURLDispatcher {
 							return null;
 						}
 						@define('CMS_REAL_PAGE', $data);
+						if (empty($data['expire'])) {
+							$data['expire'] = $this->domain['expire'];
+						}
 						if ($data['expire']) {
 							@define('CACHE_EXPIRE', $data['expire']);
 						}
@@ -178,8 +197,9 @@ class CmsDispatcher implements IURLDispatcher {
 						$data['routerArgs'] = $args;
 						//正在查看的页面数据
 						$parsedInfo->setPageData($data);
+						$headers = ['Content-Type' => $parsedInfo->contentType];
 
-						return template($tpl, $data);
+						return template($tpl, $data, $headers);
 					}
 				}
 			}
@@ -239,55 +259,5 @@ class CmsDispatcher implements IURLDispatcher {
 		}
 
 		return false;
-	}
-
-	/**
-	 * 解析URL.
-	 *
-	 * @param UrlParsedInfo $parsedInfo
-	 *
-	 * @return string
-	 */
-	private function parseURL($parsedInfo) {
-		$pageSet = false;
-		if (preg_match('#.+?\.$#', $parsedInfo->url)) {
-			return false;
-		}
-		if (rqset('_cpn')) {
-			$parsedInfo->page = irqst('_cpn');
-			$pageSet          = true;
-		}
-		if (preg_match('#(.+?)(_([\d]+|all))?$#', $parsedInfo->name, $ms)) {
-			$parsedInfo->name   = $ms[1];
-			$parsedInfo->ogname = urlencode($ms[1]);
-			if (isset($ms[3])) {
-				if ($ms[3] === '1') {
-					return false;
-				}
-				if ($ms[3] == 'all') {
-					$ms[3] = PHP_INT_MAX;
-				} else {
-					$ms[3] = intval($ms[3]);
-				}
-				if (!$pageSet) {
-					$parsedInfo->page = $ms[3];
-				}
-			}
-		}
-		if (!preg_match('#.+?(\..+)$#', $parsedInfo->url)) {
-			if ($parsedInfo->page > 1 && !$pageSet) {
-				return false;
-			}
-			$parsedInfo->name   .= '/index';
-			$parsedInfo->ogname .= '/index';
-			if (!$parsedInfo->ext) {
-				$parsedInfo->ext = 'html';
-			}
-		}
-		if (!$parsedInfo->ext) {
-			return false;
-		}
-
-		return ltrim(implode('', [$parsedInfo->path, '/', $parsedInfo->name, '.' . $parsedInfo->ext]), '/');
 	}
 }

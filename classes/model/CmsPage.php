@@ -31,7 +31,8 @@ SELECT
     CPV.data_file,
     CM.name AS model_name,CM.refid AS model_id,CM.flags AS model_flags,
 	CCH.title2 AS channel_name,CCH.title AS channel_title,
-    CCHM.template_file AS default_tpl
+    CCHM.template_file AS default_page_tpl,
+    CCHM.template_file2 AS list_page_tpl
 FROM {cms_router} AS CR 
 LEFT JOIN {cms_page} AS CP ON CP.id = CR.id
 LEFT JOIN {cms_page_field} AS CPF ON CP.id = CPF.page_id
@@ -526,6 +527,12 @@ SQL;
 				'template_file',
 				'content_file',
 				'image',
+				'image1',
+				'image2',
+				'view',
+				'cmts',
+				'dig',
+				'dig1',
 				'related_pages',
 				'author',
 				'source',

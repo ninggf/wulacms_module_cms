@@ -105,6 +105,8 @@ $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_field` (
     `keywords` VARCHAR(128) NULL COMMENT '关键词',
     `description` VARCHAR(256) NULL COMMENT '描述',
     `image` VARCHAR(512) NULL COMMENT '插图',
+    `image1` VARCHAR(512) NULL COMMENT '插图1',
+    `image2` VARCHAR(512) NULL COMMENT '插图2',
     `related_pages` TEXT NULL COMMENT '相关页面',
     `publisher` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '发布人',
     `publish_time` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '发布时间',
