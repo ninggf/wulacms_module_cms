@@ -17,6 +17,7 @@ use wulaphp\validator\JQueryValidator;
 class ArticlePageForm extends FormTable {
 	use JQueryValidator;
 	public $table = null;
+	public $model_refid;
 	/**
 	 * @var \backend\form\HiddenField
 	 * @type int
@@ -220,7 +221,6 @@ class ArticlePageForm extends FormTable {
 	 */
 	public $desc_auto_get;
 
-
 	public function alterFieldOptions($name, &$options) {
 		if ($this->_tableData && $this->_tableData['id'] && $name == 'url') {
 			$options['readonly'] = true;
@@ -234,8 +234,9 @@ class ArticlePageForm extends FormTable {
 	}
 
 	public function modelFlags() {
+		$id    = $this->model_refid ? $this->model_refid : 'article';
 		$model = new CmsModelTable();
-		$flags = $model->getFlags('article');
+		$flags = $model->getFlags($id);
 
 		return $flags;
 	}

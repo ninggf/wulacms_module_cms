@@ -1,45 +1,46 @@
 <section class="hbox stretch wulaui hidden" id="cms-site-page">
-    <aside class="aside aside-md b-r">
+    <aside class="aside aside-lg b-r">
         <section class="vbox">
-            <header class="header bg-light lt b-b">
+            <header class="header bg-light lt b-b p-l-xs p-r-xs">
                 <button class="btn btn-icon btn-default btn-sm pull-right visible-xs m-r-xs" data-toggle="class:show"
                         data-target="#channel-wrap">
                     <i class="fa fa-reorder"></i>
                 </button>
                 <div class="btn-group hidden-xs">
-                    <button class="btn btn-default" data-toggle="dropdown" style="min-width: 160px;max-width: 170px;"
+                    <button class="btn btn-default" data-toggle="dropdown" style="min-width: 210px;max-width: 210px;"
                             id="reload-ch">
-                        <i class="fa fa-cloud-upload text-success"></i>&nbsp;<span id="ch-name">我的网站</span>
+                        <i class="fa fa-cloud-upload text-success"></i>
+                        <span id="ch-name">我的网站</span>
+                        <span id="ch-box">[已发布]</span>
                     </button>
-                    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span>
+                    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-right" id="ch-status">
                         <li>
-                            <a href="javascript:" data-status="1">
+                            <a href="javascript:" data-status="11">
                                 <i class="fa fa-cloud-upload text-success"></i> 已发布
                             </a>
                         </li>
-                        <li>
-                            <a href="javascript:" data-status="0">
-                                <i class="fa fa-archive text-info"></i> 草稿箱
-                            </a>
-                        </li>
-                        {if $canApprove}
+                        {if $approveEnabled}
                             <li>
-                                <a href="javascript:" data-status="3">
-                                    <i class="fa fa-check-square-o text-warning"></i> 待审核
+                                <a href="javascript:" data-status="0">
+                                    <i class="fa fa-archive text-info"></i> 草稿箱
                                 </a>
                             </li>
-                        {/if}
-                        {if $canPublish}
                             <li>
-                                <a href="javascript:" data-status="4">
-                                    <i class="fa fa-cloud-upload text-primary"></i> 待发布
+                                <a href="javascript:" data-status="1">
+                                    <i class="fa fa-check-square-o text-primary"></i> 待发布
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:" data-status="2">
+                                    <i class="fa fa-times text-warning"></i> 未核准
                                 </a>
                             </li>
                         {/if}
                         <li>
-                            <a href="javascript:" data-status="2">
+                            <a href="javascript:" data-status="12">
                                 <i class="fa fa-recycle text-danger"></i> 回收站
                             </a>
                         </li>
@@ -116,68 +117,64 @@
         <section class="vbox">
             <header class="header bg-light lt b-b clearfix">
                 <div class="row m-t-sm">
-                    <div class="col-xs-8 hidden-xs m-b-xs">
+                    <div class="col-xs-9 hidden-xs m-b-xs">
                         <div class="hidden" id="cms-toolbar">
                             <div class="btn-group">
                                 <button class="btn btn-default">
-                                    <i class="fa fa-eye"></i>
+                                    <i class="fa fa-list"></i>
                                     <span id="m-name"></span>
                                 </button>
-                                <button class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span
-                                            class="caret"></span>
+                                <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                    <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu" id="view-content"></ul>
                             </div>
                             {if $canEditPage}
-                                <div class="act btn-group btn1 btn0">
+                                <div class="act btn-group inline btn1 btn0">
                                     <button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
                                         <i class="fa fa-plus"></i> 添加
                                     </button>
-                                    <button class="btn btn-success dropdown-toggle" data-toggle="dropdown"><span
-                                                class="caret"></span></button>
+                                    <button class="btn btn-success dropdown-toggle" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                    </button>
                                     <ul class="dropdown-menu" id="new-content"></ul>
                                 </div>
+                                {if $approveEnabled}
+                                    <div class="inline act btn1">
+                                        <button class="ps btn btn-primary s0" id="btn-pending">
+                                            <i class="fa fa-cloud-upload"></i>送审
+                                        </button>
+                                    </div>
+                                {/if}
                             {/if}
-                            {if $canPublish &&!true}
-                                <div class="act btn-group btn1">
-                                    <button class="btn btn-primary">
+                            {if $canPublish}
+                                <div class="inline act btn1">
+                                    <button class="ps btn btn-primary s1" id="btn-publish">
                                         <i class="fa fa-cloud-upload"></i>发布
                                     </button>
-                                    <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span
-                                                class="caret"></span></button>
-                                    <ul class="dropdown-menu">
-                                        <li><a href="#">Action</a></li>
-                                        <li><a href="#">Another action</a></li>
-                                        <li><a href="#">Something else here</a></li>
-                                        <li class="divider"></li>
-                                        <li><a href="#">Separated link</a></li>
-                                    </ul>
+                                    <button class="ps btn btn-warning s1" id="btn-nopub">
+                                        <i class="fa fa-times"></i>驳回
+                                    </button>
+                                    <button class="ps btn btn-warning s11" id="btn-unpub">
+                                        <i class="fa fa-unlink"></i>下线
+                                    </button>
                                 </div>
                             {/if}
-                            {if $canDelPage &&!true}
-                                <div class="act btn-group btn1 btn2 btn0">
-                                    <button class="btn btn-danger">
-                                        <i class="fa fa-trash-o"></i>删除
+                            {if $canDelPage}
+                                <div class="inline act btn1">
+                                    <button class="ps btn btn-default s12" id="btn-restore">
+                                        <i class="fa fa-retweet"></i>还原
                                     </button>
-                                    <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown"
-                                            aria-expanded="false">
-                                        <span class="caret"></span></button>
-                                    <ul class="dropdown-menu">
-                                        <li><a href="#">Action</a></li>
-                                        <li><a href="#">Another action</a></li>
-                                        <li><a href="#">Something else here</a></li>
-                                        <li class="divider"></li>
-                                        <li><a href="#">Separated link</a></li>
-                                    </ul>
                                 </div>
                             {/if}
                         </div>
                     </div>
-                    <div class="col-xs-4 m-b-xs text-right">
-                        <form data-table-form="#table" class="form-inline">
-                            <input type="hidden" id="admin-role-id" name="rid" value=""/>
+                    <div class="col-xs-3 m-b-xs text-right">
+                        <form class="form-inline" id="searchq">
                             <div class="input-group input-group-sm">
-                                <input type="text" name="q" class="input-sm form-control" placeholder="{'Search'|t}"/>
+                                <input type="text" name="q" class="input-sm form-control" placeholder="{'Search'|t}"
+                                       data-toggle="tooltip" data-placement="bottom"
+                                       title="<p class='text-left'>可用查询:<br/>1.标题，如'标题' % 你好%<br/>2.副标题<br/>3.作者,来源,标签,属性<br/>4.url</p>"/>
                                 <span class="input-group-btn">
                                     <button class="btn btn-sm btn-info" id="btn-do-search" type="submit">Go!</button>
                                 </span>
@@ -199,7 +196,10 @@
         </script>
     {/foreach}
     <script type="text/javascript">
-		layui.use(['jquery', 'ztree', 'wulaui', 'cms.main'], function ($, z, wulaui, cm) {
+		layui.use(['jquery', 'ztree', 'bootstrap', 'wulaui', 'cms.main'], function ($, z, b, wulaui, cm) {
+			$('[data-toggle="tooltip"]').tooltip({
+				html:true
+            });
 			cm.init({$canMgCh},{$modelGridCols|json_encode});
 		});
     </script>

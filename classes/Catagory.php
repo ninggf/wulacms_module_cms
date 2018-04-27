@@ -62,6 +62,12 @@ class Catagory extends ModelDoc {
 			if (!$id) {
 				return false;
 			}
+			$approveEnabled = App::bcfg('approveEnabled@cms', false);
+			if ($approveEnabled) {//自动审核被发布栏目
+				if (!$table->useRev($id, 1, $table->db(), $uid)) {
+					return false;
+				}
+			}
 			//添加到cms_channel表
 			$ch['page_id']      = $id;
 			$ch['store_path']   = $data['store_path'];
@@ -80,11 +86,18 @@ class Catagory extends ModelDoc {
 			if (!$rst) {
 				return false;
 			}
+			$approveEnabled = App::bcfg('approveEnabled@cms', false);
+			if ($approveEnabled) {//自动审核被发布栏目
+				if (!$table->useRev($id, 1, $table->db(), $uid)) {
+					return false;
+				}
+			}
 		}
 		//关联模型
 		$this->bindModels($id, $table->db());
 		//最后一定要给id赋值
-		$data['id'] = $id;
+		$data['id']  = $id;
+		$data['ver'] = 1;
 
 		return true;
 	}
@@ -128,6 +141,7 @@ class Catagory extends ModelDoc {
 		$path = $page['path'];
 		if ($path && $path != '/') {
 			$rst = $db->cudx('UPDATE {cms_page} SET origin_status = status, status=2 WHERE status !=2 AND path LIKE %s', $path . '%');
+			$rst = $rst && $db->cudx('UPDATE {cms_page_field} SET status=2 WHERE status !=2 AND path LIKE %s', $path . '%');
 
 			return $rst;
 		}
@@ -159,6 +173,9 @@ class Catagory extends ModelDoc {
 				$npa[] = $pa;
 				$np    = '/' . implode('/', $npa) . '/';
 				if (!$db->cudx('UPDATE {cms_page} SET status = origin_status WHERE path = %s', $np)) {
+					return false;
+				}
+				if (!$db->cudx('UPDATE {cms_page_field} AS CPF, {cms_page} AS CP SET CPF.status = CP.origin_status WHERE CPF.page_id = CP.id AND CPF.path = %s', $np)) {
 					return false;
 				}
 			}

@@ -87,18 +87,22 @@ class DynamicPage extends ModelDoc {
 		$table                = new CmsPage();
 		$where['CPF.channel'] = $chid;
 		$where['CPF.model']   = $mid;
-
+		$this->buildSearch($where);
 		$q = $table->alias('CP')->select('CPF.page_id,CPF.title2,CPF.template_file,CP.url,CU.nickname AS create_uid,UU.nickname AS update_uid,PU.nickname AS publisher,CP.create_time AS create_time,CPF.update_time AS update_time,CPR.publish_time AS publish_time')->page($page, $limit);
-		if ($status == '3' || $status == '4' || $status == '0') {//从cms_page_rev表读取
-			$where['CPF.status'] = $status > 0 ? $status - 2 : 0;//0=>草稿,1=>待审核，2=>待发布
+
+		if ($status < 10) {//从cms_page_rev表读取
+			$where['CPF.status']   = $status;//0=>草稿,1=>待审核，2=>未核准
+			$where['CP.status <>'] = 2;
 			$q->join('{cms_page_rev} AS CPF', 'CPF.page_id = CP.id');
 			$q->sort('CPF.ver', 'd');
 			$q->field('CPF.ver', 'ver');
+			$q->field('CPF.status', 'revStatus');
 		} else {//从cms_page_field表读取
-			$where['CP.status'] = $status;//1,2
+			$where['CPF.status'] = $status - 10;//1,2
 			$q->join('{cms_page_field} AS CPF', 'CPF.page_id = CP.id');
 			$q->field('CP.ver', 'ver');
 		}
+
 		$q->join('{user} AS CU', 'CU.id = CP.create_uid');
 		$q->join('{user} AS UU', 'UU.id = CPF.update_uid');
 		$q->join('{cms_page_rev} AS CPR', 'CPR.page_id = CP.id AND CP.ver = CPR.ver');
@@ -109,9 +113,13 @@ class DynamicPage extends ModelDoc {
 
 		$data = $q->toArray();
 		foreach ($data as $k => &$v) {
-			$v['create_time']  = date('Y-m-d H:i', $v['create_time']);
-			$v['update_time']  = date('Y-m-d H:i', $v['update_time']);
-			$v['publish_time'] = date('Y-m-d H:i', $v['publish_time']);
+			$v['create_time'] = date('Y-m-d H:i', $v['create_time']);
+			$v['update_time'] = date('Y-m-d H:i', $v['update_time']);
+			if ($v['publish_time']) {
+				$v['publish_time'] = date('Y-m-d H:i', $v['publish_time']);
+			} else {
+				$v['publish_time'] = '';
+			}
 		}
 
 		return $this->formatGridData($data, $total);

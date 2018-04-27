@@ -7,6 +7,7 @@ use cms\classes\ArticlePage;
 use cms\classes\Catagory;
 use cms\classes\cfg\CmsSetting;
 use cms\classes\CmsDispatcher;
+use cms\classes\ds\BlockDatasource;
 use cms\classes\ds\CrumbDatasource;
 use cms\classes\ds\PageDatasource;
 use cms\classes\DynamicPage;
@@ -35,6 +36,7 @@ class CmsModule extends CmfModule {
 
 	public function getVersionList() {
 		$v['1.0.0'] = '初始版本';
+		$v['1.1.0'] = '添加页面区块功能';
 
 		return $v;
 	}
@@ -73,10 +75,11 @@ class CmsModule extends CmfModule {
 				$page->icon        = '&#xe637;';
 				$page->data['url'] = App::url('cms/site');
 
-				//				if ($passport->cando('m:site/block')) {
-				//					$block       = $site->getMenu('block', '页面区块', 900);
-				//					$block->icon = '&#xe61a;';
-				//				}
+				if ($passport->cando('m:site/block')) {
+					$block              = $site->getMenu('block', '页面区块', 900);
+					$block->icon        = '&#xe61a;';
+					$block->data['url'] = App::url('cms/block');
+				}
 
 				if ($passport->cando('m:site/model')) {
 					$model              = $site->getMenu('model', '内容模型', 999);
@@ -184,6 +187,7 @@ class CmsModule extends CmfModule {
 	public static function regDss($ds) {
 		$ds['page']  = new PageDatasource();
 		$ds['crumb'] = new CrumbDatasource();
+		$ds['block'] = new BlockDatasource();
 
 		return $ds;
 	}

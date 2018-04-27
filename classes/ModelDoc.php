@@ -30,6 +30,7 @@ use cms\classes\scws\Scwser;
 use media\classes\ImageTool;
 use media\Media1Module;
 use wulaphp\app\App;
+use wulaphp\db\sql\Condition;
 
 /**
  * 内容模型加载器.
@@ -253,6 +254,7 @@ abstract class ModelDoc {
 			$page  = $table->loadFields($id, false);
 		}
 		$rst = $db->cudx('UPDATE {cms_page} SET origin_status = status, status=2 WHERE id = %d', $page['id']);
+		$rst = $rst && $db->cudx('UPDATE {cms_page_field} SET status=2 WHERE page_id = %d', $page['id']);
 
 		return $rst;
 	}
@@ -273,7 +275,10 @@ abstract class ModelDoc {
 			$table = new CmsPage($db);
 			$page  = $table->loadFields($id, false);
 		}
-		if (!$db->cudx('UPDATE {cms_page} SET status = origin_status WHERE id = %d', $page['id'])) {
+		$os = $db->query('select origin_status from {cms_page} where id = %d', $page['id']);
+		$os = $os && $os[0] ? $os[0]['origin_status'] : 0;
+
+		if (!$db->cudx('UPDATE {cms_page_field} SET status = %d WHERE page_id = %d', $os, $page['id'])) {
 			return false;
 		}
 
@@ -293,6 +298,7 @@ abstract class ModelDoc {
 		$page['channel']     = $data['channel']['chid'];
 		$page['model']       = $data['model']['id'];
 		$page['model_refid'] = $data['model']['refid'];
+		$page['ver']         = irqst('ver');
 		if ($page['model'] == 1) {
 			$page['path'] = $data['channel']['path'] . $data['store_path'] . '/';
 		} else {
@@ -372,6 +378,35 @@ abstract class ModelDoc {
 		}
 
 		return array_merge($data, $page);
+	}
+
+	/**
+	 * 构建查询条件
+	 *
+	 * @param array $where
+	 */
+	protected function buildSearch(&$where) {
+		$q = rqst('q');
+		if ($q) {
+			if (is_numeric($q)) {
+				$where['CP.id'] = $q;
+			} else {
+				$wh = Condition::parseSearchExpression($q, [
+					'标题'  => 'CPF.title',
+					'副标题' => 'CPF.title2',
+					'作者'  => 'CPF.author',
+					'来源'  => 'CPF.source',
+					'标签'  => 'CPF.tags',
+					'属性'  => 'CPF.flags',
+					'url' => 'CP.url'
+				]);
+				if ($wh) {
+					foreach ($wh as $k => $h) {
+						$where[ $k ] = $h;
+					}
+				}
+			}
+		}
 	}
 
 	/**

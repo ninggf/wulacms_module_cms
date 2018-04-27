@@ -98,7 +98,7 @@ SQL;
 	 *
 	 * @return bool|int 新页面ID或false.
 	 */
-	public function newPage($data, &$error = null) {
+	public function newPage(&$data, &$error = null) {
 		if (!$data) {
 			$error = '数据为空';
 
@@ -213,7 +213,7 @@ SQL;
 	 *
 	 * @return bool
 	 */
-	public function updatePage($id, $data, &$error = null) {
+	public function updatePage($id, &$data, &$error = null) {
 		$id = intval($id);
 		if (!$id) {
 			$error = '未指定要更新的页面';
@@ -255,18 +255,33 @@ SQL;
 	 * 将页面放入回收站.
 	 *
 	 * @param string|int $id
+	 * @param string|int $ver
 	 * @param mixed      $error
 	 *
 	 * @return bool
 	 */
-	public function deletePage($id, &$error = null) {
+	public function deletePage($id, $ver, &$error = null) {
 		$id = intval($id);
 		if (!$id) {
 			$error = '页面ID为空';
 
 			return false;
 		}
-		$rst = $this->trans(function (DatabaseConnection $dbx) use ($id) {
+
+		$rst = $this->trans(function (DatabaseConnection $dbx) use ($id, $ver) {
+			if ($ver) {
+				//仅删除版本
+				if ($dbx->delete()->from('{cms_page_rev}')->where(['page_id' => $id, 'ver' => $ver])->exec()) {
+					$file = 'c' . ($id % 10) . '/data@' . $id . '.' . $ver;
+					$this->deleteFile($file);
+					fire('cms\onPageRevDeleted', $id, $ver);
+
+					return true;
+				}
+
+				return false;
+			}
+			//放入回收站
 			$page = $this->loadFields($id, false);
 			if (isset($page['model_id']) && $page['model_id']) {
 				$doc = ModelDoc::getDoc($page['model_id']);
@@ -379,6 +394,98 @@ SQL;
 	}
 
 	/**
+	 * 下线操作
+	 *
+	 * @param array       $ids
+	 * @param string|null $error
+	 *
+	 * @return bool
+	 */
+	public function unpublish($ids, &$error = null) {
+		if (!$ids) {
+			$error = '页面ID为空';
+
+			return false;
+		}
+
+		$rst = $this->trans(function (DatabaseConnection $db) use ($ids) {
+			//将cms_page的status改为0
+			$idx = '(' . implode(',', $ids) . ')';
+			$rst = $db->cudx('UPDATE {cms_page} SET status = 0,origin_status=0 WHERE status =1 AND id IN ' . $idx);
+			//将cms_page_field的status改为0
+			$rst = $rst && $db->cudx('UPDATE {cms_page_field} SET status = 0 WHERE status =1 AND page_id IN ' . $idx);
+			//将cms_page_rev的status改为0
+			$rst = $rst && $db->cudx('UPDATE {cms_page_rev} AS CPR, {cms_page} AS CP SET CPR.status = 0 WHERE CPR.page_id = CP.id AND CPR.ver = CP.ver AND CPR.page_id IN ' . $idx);
+
+			return $rst;
+		});
+		if (!$rst) {
+			$error = $this->errors;
+		}
+
+		return $rst;
+	}
+
+	/**
+	 * 送审
+	 *
+	 * @param array $ids
+	 * @param null  $error
+	 *
+	 * @return bool
+	 */
+	public function pendingApprove($ids, &$error = null) {
+		if (!$ids) {
+			$error = '页面ID为空';
+
+			return false;
+		}
+
+		$rst = $this->trans(function (DatabaseConnection $db) use ($ids) {
+			$idx = '(' . implode(',', $ids) . ')';
+			//将cms_page_rev的status改为0
+			$rst = $db->cudx('UPDATE {cms_page_rev} SET status = 1 WHERE status = 0 AND page_id IN ' . $idx);
+
+			return $rst;
+		});
+		if (!$rst) {
+			$error = $this->errors;
+		}
+
+		return $rst;
+	}
+
+	/**
+	 * 驳回，审核不通过
+	 *
+	 * @param array       $ids
+	 * @param string|null $error
+	 *
+	 * @return bool|mixed|null
+	 */
+	public function notApprove($ids, &$error = null) {
+		if (!$ids) {
+			$error = '页面ID为空';
+
+			return false;
+		}
+
+		$rst = $this->trans(function (DatabaseConnection $db) use ($ids) {
+
+			$idx = '(' . implode(',', $ids) . ')';
+			//将cms_page_rev的status改为2
+			$rst = $db->cudx('UPDATE {cms_page_rev} SET status = 2 WHERE status = 1 AND page_id IN ' . $idx);
+
+			return $rst;
+		});
+		if (!$rst) {
+			$error = $this->errors;
+		}
+
+		return $rst;
+	}
+
+	/**
 	 * 创建一个新的版本.
 	 *
 	 * @param string|int                     $id   页面ID
@@ -477,6 +584,30 @@ SQL;
 			return false;
 		}
 		try {
+			//删除多余的已经发布版本
+			$maxVers = App::icfgn('maxVer@cms', 5);
+			if ($maxVers <= 0) {
+				$maxVers = 2;
+			}
+			$ps3 = $db->query('SELECT ver,data_file FROM {cms_page_rev} WHERE status = 3 AND page_id = %d ORDER BY ver DESC LIMIT %d,100', $id, $maxVers);
+			if ($ps3) {
+				$vers = [];
+				foreach ($ps3 as $p) {
+					$this->deleteFile($p['data_file']);
+					$vers[] = $p['ver'];
+				}
+				$db->delete()->from('{cms_page_rev}')->where(['page_id' => $id, 'ver IN' => $vers])->exec();
+			}
+			//删除多余的草稿版本
+			$ps2 = $db->query('SELECT ver,data_file FROM {cms_page_rev} WHERE status IN (0,2) AND page_id = %d ORDER BY ver DESC LIMIT %d,100', $id, $maxVers);
+			if ($ps2) {
+				$vers = [];
+				foreach ($ps2 as $p) {
+					$this->deleteFile($p['data_file']);
+					$vers[] = $p['ver'];
+				}
+				$db->delete()->from('{cms_page_rev}')->where(['page_id' => $id, 'ver IN' => $vers])->exec();
+			}
 			fire('cms\on' . ucfirst($data['model_refid'] . 'PageUpdated'), $data, $data);
 			fire('cms\onPageUpdated', $data, $db);
 		} catch (\Exception $e) {

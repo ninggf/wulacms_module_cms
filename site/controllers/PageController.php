@@ -193,6 +193,10 @@ class PageController extends IFramePageController {
 				$data['validate_rules'] = $dform->encodeValidatorRule($this);
 			}
 		}
+		if (!$ver) {
+			//未指定版本号时，每次编辑将新增一个版本。
+			unset($data['ver']);
+		}
 		if ($tpl) {
 			return $this->render($tpl, $data);
 		} else {
@@ -323,20 +327,22 @@ class PageController extends IFramePageController {
 	/**
 	 * 删除或放入回收站。
 	 *
-	 * @param string $id
-	 * @param string $force
+	 * @param string     $id    页面ID
+	 * @param string     $force 硬删除
+	 * @param string|int $ver   版本号
 	 *
 	 * @acl   del:site/page
 	 * @return \wulaphp\mvc\view\JsonView
 	 */
-	public function del($id, $force = '') {
+	public function del($id, $force = '', $ver = '') {
 		$table = new CmsPage();
 
 		$table->uid = $this->passport->uid;
-		if ($force) {
+
+		if ($force && !$ver) {
 			$rst = $table->hardDeletePage($id, $error);
 		} else {
-			$rst = $table->deletePage($id, $error);
+			$rst = $table->deletePage($id, $ver, $error);
 		}
 		if ($rst) {
 			return Ajax::reload('#content-grid', '页面已经放入回收站');
@@ -366,7 +372,132 @@ class PageController extends IFramePageController {
 	}
 
 	/**
-	 * 发布。
+	 * @param string $ids
+	 *
+	 * @return \wulaphp\mvc\view\JsonView
+	 * @acl   del:site/page
+	 */
+	public function restore($ids = '') {
+		$ids = safe_ids2($ids);
+		if (!$ids) {
+			return Ajax::warn('没要还原的内容');
+		}
+		$table = new CmsPage();
+
+		$table->uid = $this->passport->uid;
+		foreach ($ids as $id) {
+			$table->restorePage($id);
+		}
+
+		return Ajax::reload('#content-grid', '内容已经还原');
+	}
+
+	/**
+	 * 取消发布（下线）
+	 *
+	 * @param string $ids
+	 *
+	 * @return \wulaphp\mvc\view\JsonView
+	 * @acl pb:site/page
+	 */
+	public function unpub($ids) {
+		$ids = safe_ids2($ids);
+		if (!$ids) {
+			return Ajax::warn('没要下线的内容');
+		}
+		$table = new CmsPage();
+
+		$table->uid = $this->passport->uid;
+		$table->unpublish($ids);
+
+		return Ajax::reload('#content-grid', '内容已下线');
+	}
+
+	/**
+	 * 送审
+	 *
+	 * @param string $ids
+	 *
+	 * @acl edit:site/page
+	 * @return \wulaphp\mvc\view\JsonView
+	 */
+	public function pending($ids) {
+		$ids = safe_ids2($ids);
+		if (!$ids) {
+			return Ajax::warn('没要送审的内容');
+		}
+		$table = new CmsPage();
+
+		$table->uid = $this->passport->uid;
+		$table->pendingApprove($ids);
+
+		return Ajax::reload('#content-grid', '内容已送审');
+	}
+
+	/**
+	 * 驳回-不发布
+	 * @param string $ids
+	 *
+	 * @acl   pb:site/page
+	 * @return \wulaphp\mvc\view\JsonView
+	 */
+	public function nopublish($ids) {
+		$ids = safe_ids2($ids);
+		if (!$ids) {
+			return Ajax::warn('没要驳回的内容');
+		}
+		$table = new CmsPage();
+
+		$table->uid = $this->passport->uid;
+		$table->notApprove($ids);
+
+		return Ajax::reload('#content-grid', '内容已驳回');
+	}
+
+	/**
+	 * 发布页面
+	 *
+	 * @param string $ids
+	 *
+	 * @acl   pb:site/page
+	 * @return \wulaphp\mvc\view\JsonView
+	 */
+	public function publish($ids) {
+		$ids = explode(',', $ids);
+		$cnt = count($ids);
+		if (!$ids || $cnt % 2 != 0) {
+			return Ajax::warn('没要送审的内容');
+		}
+
+		$table = new CmsPage();
+		$db    = $table->db();
+		$db->start();
+		$table->uid = $this->passport->uid;
+		$rst        = false;
+		for ($i = 0; $i < $cnt; $i += 2) {
+			$id  = intval($ids[ $i ]);
+			$ver = intval($ids[ $i + 1 ]);
+			if (!$id || !$ver) {
+				continue;
+			}
+			$rst = $table->useRev($id, $ver, $db, $table->uid);
+			if (!$rst) {
+				break;
+			}
+		}
+		if ($rst) {
+			$db->commit();
+
+			return Ajax::reload('#content-grid', '发布成功');
+		} else {
+			$db->rollback();
+
+			return Ajax::error('发布失败');
+		}
+	}
+
+	/**
+	 * 发布栏目。
 	 *
 	 * @param string|int $id
 	 * @param string|int $ver

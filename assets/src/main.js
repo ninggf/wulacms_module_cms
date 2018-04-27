@@ -19,7 +19,7 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 		gridCols    : null,
 		sortf       : null,
 		searchParams: {
-			status: 1
+			status: 11
 		},
 		init(editable, gcols) {
 			let sitePage = $('#cms-site-page'), me = this;
@@ -46,6 +46,7 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 			this.restoreChBtn = $('#restore-ch');
 			this.chBtns       = $('#ch-btns');
 			this.chBtns.find('li').not('.showx').hide();
+			this.cmToolbar.find('.ps').not('.s11').hide();
 			this.pubChBtn.on('ajax.success', function () {
 				let treeObj = $.fn.zTree.getZTreeObj("channel-tree");
 				if (me.cNode) {
@@ -63,8 +64,11 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 				me._reloadTree(1);
 			});
 			$('#ch-status a').on('click', function () {
-				let st = $(this).data('status'), cls = $(this).find('i').attr('class');
+				let st = $(this).data('status'), cls = $(this).find('i').attr('class'), txt = $(this).text().trim();
 				$('#reload-ch').find('i').attr('class', cls);
+				$('#ch-box').text('[' + txt + ']');
+				me.cmToolbar.find('.ps').hide();
+				me.cmToolbar.find('.s' + st).show();
 				me.searchParams.status = st;
 				me.reload(me.cNode, me.cModel);
 			});
@@ -80,6 +84,114 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 			}).on('click', '#m-name', function () {
 				me.reload(me.cNode, me.cModel);
 			});
+			//还原操作
+			$('#btn-restore').on('click', function () {
+				let selected = table.checkStatus('grid'), ids = [];
+				if (selected.data.length > 0) {
+					$(selected.data).each((i, e) => {
+						if (e.status === 2) ids.push(e.page_id);
+					});
+					if (ids.length > 0) {
+						wulaui.ajax.confirm({
+							url    : wulaui.app('cms/site/page/restore'),
+							element: $(this),
+							data   : {
+								ids: ids.join(',')
+							}
+						}, '你真要从回收站还原所选内容吗?', {loading: true});
+					}
+				} else {
+					wulaui.toast.warning('请选择要还原的内容');
+				}
+			});
+			//下线操作-放入草稿箱
+			$('#btn-unpub').on('click', function () {
+				let selected = table.checkStatus('grid'), ids = [];
+				if (selected.data.length > 0) {
+					$(selected.data).each((i, e) => {
+						if (e.status === 1) ids.push(e.page_id);
+					});
+					if (ids.length > 0) {
+						wulaui.ajax.confirm({
+							url    : wulaui.app('cms/site/page/unpub'),
+							element: $(this),
+							data   : {
+								ids: ids.join(',')
+							}
+						}, '你真要将所选内容下线吗?', {loading: true});
+					}
+				} else {
+					wulaui.toast.warning('请选择要下线的内容');
+				}
+			});
+			//下线操作-放入草稿箱
+			$('#btn-pending').on('click', function () {
+				let selected = table.checkStatus('grid'), ids = [];
+				if (selected.data.length > 0) {
+					$(selected.data).each((i, e) => {
+						if (e.revStatus === 0)
+							ids.push(e.page_id);
+					});
+					if (ids.length > 0) {
+						wulaui.ajax.confirm({
+							url    : wulaui.app('cms/site/page/pending'),
+							element: $(this),
+							data   : {
+								ids: ids.join(',')
+							}
+						}, '你真要将所选内容提交审核吗?', {loading: true});
+					}
+				} else {
+					wulaui.toast.warning('请选择要送审的内容');
+				}
+			});
+			//发布
+			$('#btn-publish').on('click', function () {
+				let selected = table.checkStatus('grid'), ids = [];
+				if (selected.data.length > 0) {
+					$(selected.data).each((i, e) => {
+						if (e.revStatus === 1) ids.push(e.page_id + ',' + e.ver);
+					});
+					if (ids.length > 0) {
+						wulaui.ajax.confirm({
+							url    : wulaui.app('cms/site/page/publish'),
+							element: $(this),
+							data   : {
+								ids: ids.join(',')
+							}
+						}, '你真要发布所选内容吗?', {loading: true});
+					}
+				} else {
+					wulaui.toast.warning('请选择要发布的内容');
+				}
+			});
+			//驳回
+			$('#btn-nopub').on('click', function () {
+				let selected = table.checkStatus('grid'), ids = [];
+				if (selected.data.length > 0) {
+					$(selected.data).each((i, e) => {
+						if (e.revStatus === 1) ids.push(e.page_id + ',' + e.ver);
+					});
+					if (ids.length > 0) {
+						wulaui.ajax.confirm({
+							url    : wulaui.app('cms/site/page/nopublish'),
+							element: $(this),
+							data   : {
+								ids: ids.join(',')
+							}
+						}, '你真要驳回所选内容吗?', {loading: true});
+					}
+				} else {
+					wulaui.toast.warning('请选择要驳回的内容');
+				}
+			});
+			//搜索按键
+			$('#searchq').on('submit', function () {
+				me.searchParams.q = $(this).find('input').val();
+				me.reload(me.cNode, me.cModel);
+				return false;
+			});
+			//reload
 			$('#content-grid').data('loaderObj', {
 				reload() {
 					me.cntGrid.reload();
@@ -87,6 +199,7 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 			});
 			//初始化内容表格
 			me.cntGrid = table.render({
+				id          : 'grid',
 				elem        : '#content-grid',
 				cols        : [[]],
 				skin        : 'line',
@@ -123,26 +236,35 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 				});
 			});
 			table.on('tool(grid)', (obj) => {
-				let toolbar = $(obj.tr[obj.tr.length - 1]), btn = toolbar.find('a[lay-event="' + obj.event + '"]');
+				let toolbar = $(obj.tr[obj.tr.length - 1]), btn = toolbar.find('a[lay-event="' + obj.event + '"]'),
+					pd                                          = obj.data, ver = '';
 				if (btn.length > 0) {
 					let url = btn.data('ogurl');
 					if (!url) {
 						url = btn.attr('href');
 						btn.data('ogurl', url);
 					}
-					url += obj.data.page_id;
+					url += pd.page_id;
 					if (obj.event === 'del') {
-						if (obj.data.status === 2) {
+						if (pd.status === 2) {
 							url += '/1';
 							btn.data('confirm', '你真的要将其永久删除吗?');
 						} else {
-							btn.data('confirm', '你真的要将其放入回收站吗?');
+							if (pd.revStatus < 3) {
+								url += '/0/' + pd.ver;
+								btn.data('confirm', '你真的要删除这个版本?');
+							} else {
+								btn.data('confirm', '你真的要将其放入回收站吗?');
+							}
 						}
+					} else if (pd.revStatus < 3) {
+						url += '/' + pd.ver;
+						ver = ',rev:' + pd.ver
 					}
 					btn.data('curpage', obj);
 					btn.attr('href', url);
 					if (btn.data('tab') !== undefined && btn.data('title')) {
-						btn.data('title', btn.data('title').replace('{page_id}', obj.data.page_id));
+						btn.data('title', btn.data('title').replace('{page_id}', 'ID:' + pd.page_id + ver));
 					}
 				}
 			});

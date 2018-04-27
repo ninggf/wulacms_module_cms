@@ -159,7 +159,7 @@ $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_page_rev` (
     `description` VARCHAR(256) NULL COMMENT '描述',
     `image` VARCHAR(512) NULL COMMENT '插图',
     `related_pages` TEXT NULL COMMENT '相关页面',
-    `status` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态,0草稿，1：提交审核，2：未通过，3：通过',
+    `status` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '状态,0草稿，1：待审核，2：未通过，3：通过(已发布)',
     `ip` VARCHAR(64) NOT NULL COMMENT '操作时使用的IP地址', 
     `data_file` VARCHAR(128) NULL COMMENT '数据文件',
     `publisher` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '发布人',
@@ -177,3 +177,41 @@ $tables['1.0.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_channel` (
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='栏目'";
 
 $tables['1.0.0'][] = "INSERT INTO `{prefix}cms_model` (`id`,`refid`,`name`,`flags`,`hidden`,`creatable`) VALUES (2,'dynamic','动态模板页',null,1,1), (1,'catagory','栏目',null,1,1),(3,'static','静态模板页',null,1,1), (4,'article','普通文章','头条,推荐,特荐,置顶,跳转',0,1)";
+
+//添加区块功能
+$tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `page` VARCHAR(16) NOT NULL COMMENT '区块所在页面',
+    `name` VARCHAR(32) NOT NULL COMMENT '区块名称',
+    `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+    `create_uid` INT UNSIGNED NOT NULL DEFAULT 0,
+    `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+    `update_uid` INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `UDX_PN` (`name` ASC , `page` ASC)
+)  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='页面区块'";
+
+$tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block_items` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `block_id` INT UNSIGNED NOT NULL COMMENT '所在区块',
+    `pn` VARCHAR(49) NOT NULL COMMENT '区块名称',
+    `title` VARCHAR(64) NULL COMMENT '标题',
+    `title2` VARCHAR(64) NULL COMMENT '副标题',
+    `url` VARCHAR(256) NULL COMMENT '链接地址',
+    `image` VARCHAR(256) NULL COMMENT '图片1',
+    `image1` VARCHAR(256) NULL COMMENT '图片2',
+    `image2` VARCHAR(256) NULL COMMENT '图片3',
+    `sort` SMALLINT UNSIGNED NOT NULL DEFAULT 999 COMMENT '排序',
+    `page_id` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '绑定的页面',
+    `num` INT NOT NULL DEFAULT 0 COMMENT '任意数1',
+    `num1` INT NOT NULL DEFAULT 0 COMMENT '任意数2',
+    `num2` INT NOT NULL DEFAULT 0 COMMENT '任意数3',
+    `desc` VARCHAR(256) NULL COMMENT '说明',
+    `create_time` INT UNSIGNED NOT NULL DEFAULT 0,
+    `create_uid` INT UNSIGNED NOT NULL DEFAULT 0,
+    `update_time` INT UNSIGNED NOT NULL DEFAULT 0,
+    `update_uid` INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`),
+    INDEX `FK_BLOCKID` (`block_id` ASC),
+    INDEX `UDX_PN` (`pn` ASC)
+)  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='区块内容'";

@@ -4,6 +4,7 @@
               data-validate="{$validate_rules|escape}" data-ajax data-loading>
             <input type="hidden" name="model" value="{$cmodel.id}"/>
             <input type="hidden" name="channel" value="{$cchannel.chid}"/>
+            <input type="hidden" name="ver" value="{$ver}" id="rev"/>
             <div class="form-group">
                 <p class="form-control-static"><strong>栏目：</strong>{$cchannel.name},
                     <strong>路径：</strong>{$cchannel.path}</p>
@@ -68,6 +69,7 @@
 							$('#description').val(page.description);
 							$('#content_editorxx').html(page.content);
 							$('#content').val(page.content);
+							$("#rev").val(page.ver);
 							layer.close(idx);
 						}, function (idx) {
 							top.jqTabmenu.close(location);

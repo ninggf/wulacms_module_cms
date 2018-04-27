@@ -75,8 +75,9 @@ class ArticlePage extends ModelDoc {
 				return false;
 			}
 		}
-		//最后一定要给id赋值
-		$data['id'] = $id;
+		//最后一定要给id和ver赋值
+		$data['id']  = $id;
+		$data['ver'] = $page['ver'];
 
 		return true;
 	}
@@ -97,16 +98,17 @@ class ArticlePage extends ModelDoc {
 		$table                = new CmsPage();
 		$where['CPF.channel'] = $chid;
 		$where['CPF.model']   = $mid;
-
+		$this->buildSearch($where);
 		$q = $table->alias('CP')->select('CPF.page_id,CP.status,CPF.title,CPF.title2,CPF.author,CPF.source,CPF.flags,CPF.tags,CP.url,CU.nickname AS create_uid,UU.nickname AS update_uid,PU.nickname AS publisher,CP.create_time AS create_time,CPF.update_time AS update_time,CPF.publish_time AS publish_time')->page($page, $limit);
-		if ($status == '3' || $status == '4' || $status == '0') {//从cms_page_rev表读取
-			$where['CPF.status']   = $status > 0 ? $status - 2 : 0;//0=>草稿,1=>待审核，2=>待发布
+		if ($status < 10) {//从cms_page_rev表读取
+			$where['CPF.status']   = $status;//0=>草稿,1=>待审核，2=>未核准
 			$where['CP.status <>'] = 2;
 			$q->join('{cms_page_rev} AS CPF', 'CPF.page_id = CP.id');
 			$q->sort('CPF.ver', 'd');
 			$q->field('CPF.ver', 'ver');
+			$q->field('CPF.status', 'revStatus');
 		} else {//从cms_page_field表读取
-			$where['CPF.status'] = $status;//1,2
+			$where['CP.status'] = $status - 10;//1,2
 			$q->join('{cms_page_field} AS CPF', 'CPF.page_id = CP.id');
 			$q->field('CP.ver', 'ver');
 		}
@@ -119,9 +121,13 @@ class ArticlePage extends ModelDoc {
 
 		$data = $q->toArray();
 		foreach ($data as $k => &$v) {
-			$v['create_time']  = date('Y-m-d H:i', $v['create_time']);
-			$v['update_time']  = date('Y-m-d H:i', $v['update_time']);
-			$v['publish_time'] = date('Y-m-d H:i', $v['publish_time']);
+			$v['create_time'] = date('Y-m-d H:i', $v['create_time']);
+			$v['update_time'] = date('Y-m-d H:i', $v['update_time']);
+			if ($v['publish_time']) {
+				$v['publish_time'] = date('Y-m-d H:i', $v['publish_time']);
+			} else {
+				$v['publish_time'] = '';
+			}
 		}
 
 		return $this->formatGridData($data, $total);
@@ -266,6 +272,9 @@ class ArticlePage extends ModelDoc {
 		$data['scws_auto_get'] = App::bcfg('scwsEnabled@cms') && extension_loaded('scws');
 		$data['desc_auto_get'] = App::bcfg('descEnabled@cms') && class_exists('\media\classes\ImageTool');
 
-		return new ArticlePageForm(true);
+		$form              = new ArticlePageForm(true);
+		$form->model_refid = $this->id();
+
+		return $form;
 	}
 }

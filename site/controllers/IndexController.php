@@ -25,15 +25,16 @@ class IndexController extends IFramePageController {
 	 * @return \wulaphp\mvc\view\View
 	 */
 	public function index() {
-		$data['canMgCh']       = $this->passport->cando('mc:site/page');
-		$data['canApprove']    = $this->passport->cando('ap:site/page');
-		$data['canPublish']    = $this->passport->cando('pb:site/page');
-		$data['canClearCC']    = $this->passport->cando('hc:site/page');
-		$data['canDelPage']    = $this->passport->cando('del:site/page');
-		$data['canEditPage']   = $this->passport->cando('edit:site/page');
-		$gridCfg               = ModelDoc::getGridCols();
-		$data['modelGridCols'] = $gridCfg[0];
-		$data['modelToolbars'] = $gridCfg[1];
+		$data['canMgCh']        = $this->passport->cando('mc:site/page');
+		$data['canApprove']     = $this->passport->cando('ap:site/page');
+		$data['canPublish']     = $this->passport->cando('pb:site/page');
+		$data['canClearCC']     = $this->passport->cando('hc:site/page');
+		$data['canDelPage']     = $this->passport->cando('del:site/page');
+		$data['canEditPage']    = $this->passport->cando('edit:site/page');
+		$gridCfg                = ModelDoc::getGridCols();
+		$data['modelGridCols']  = $gridCfg[0];
+		$data['modelToolbars']  = $gridCfg[1];
+		$data['approveEnabled'] = App::bcfg('approveEnabled@cms');
 
 		return $this->render($data);
 	}
@@ -63,7 +64,7 @@ class IndexController extends IFramePageController {
 				} else if ($ch['status'] == '2') {
 					$chs[ $k ]['name'] = '<font class="text-danger">' . $chs[ $k ]['name'] . '</font>';
 				}
-				$models              = $db->query('SELECT CM.name,CM.id,CCM.enabled,CM.refid FROM {cms_channel_model} AS CCM LEFT JOIN {cms_model} AS CM ON CCM.model = CM.id WHERE CM.creatable = 1 AND CCM.page_id = ' . $ch['id'].' ORDER BY CM.id DESC');
+				$models              = $db->query('SELECT CM.name,CM.id,CCM.enabled,CM.refid FROM {cms_channel_model} AS CCM LEFT JOIN {cms_model} AS CM ON CCM.model = CM.id WHERE CM.creatable = 1 AND CCM.page_id = ' . $ch['id'] . ' ORDER BY CM.id DESC');
 				$chs[ $k ]['models'] = $models;
 			}
 
