@@ -147,12 +147,8 @@ class PageDatasource extends CtsDataSource {
 			'id'           => 'ID',
 			'model_name'   => '模型',
 			'channel_name' => '栏目',
-			'title2'       => '副标题',
-			'title'        => '标题',
-			'view'         => '阅读次数',
-			'cmts'         => '评论次数',
-			'dig'          => '顶次',
-			'dig1'         => '踩'
+			'title'       => '标题',
+			'title2'        => '副标题'
 		];
 	}
 }

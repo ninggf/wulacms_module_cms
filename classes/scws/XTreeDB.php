@@ -62,15 +62,14 @@ class XTreeDB {
 		}
 		$xdb = new XTreeDB ();
 		if ($xdb->Open($file, 'w')) {
-			$total = 0;
-			$rec   = [];
+			$rec = [];
 			foreach ($words as $word) {
 				$k = (ord($word [0]) + ord($word [1])) & 0x3f;
 				if (!isset ($rec [ $k ])) {
 					$rec [ $k ] = [];
 				}
 				if (!isset ($rec [ $k ] [ $word ])) {
-					$total++;
+
 					$rec [ $k ] [ $word ] = [];
 				}
 				$rec [ $k ] [ $word ] ['tf']   = '1.0';
@@ -78,32 +77,28 @@ class XTreeDB {
 				$rec [ $k ] [ $word ] ['attr'] = $attr;
 				$len                           = mb_strlen($word);
 				while ($len > 2) {
-					$len--;
+					$len  -= 1;
 					$temp = mb_substr($word, 0, $len);
 					if (!isset ($rec [ $k ] [ $temp ])) {
-						$total++;
 						$rec [ $k ] [ $temp ] = [];
 					}
 					$rec [ $k ] [ $temp ] ['part'] = 1;
 				}
 			}
-
-			for ($k = 0; $k < 0x40; $k++) {
-				if (!isset ($rec [ $k ])) {
-					continue;
-				}
-				$cnt = 0;
-				foreach ($rec [ $k ] as $w => $v) {
-					$flag = (isset ($v ['tf']) ? 0x01 : 0);
-					if (isset ($v ['part']) && $v ['part']) {
-						$flag |= 0x02;
+			if ($rec) {
+				$keys = array_keys($rec);
+				foreach ($keys as $k) {
+					foreach ($rec [ $k ] as $w => $v) {
+						$flag = (isset ($v ['tf']) ? 0x01 : 0);
+						if (isset ($v ['part'])) {
+							$flag |= 0x02;
+						}
+						$data = pack('ffCa3', $v ['tf'], $v ['idf'], $flag, $v ['attr']);
+						$xdb->Put($w, $data);
 					}
-					$data = pack('ffCa3', $v ['tf'], $v ['idf'], $flag, $v ['attr']);
-					$xdb->Put($w, $data);
-					$cnt++;
 				}
+				$xdb->Optimize();
 			}
-			$xdb->Optimize();
 			$xdb->Close();
 
 			return true;
@@ -112,8 +107,49 @@ class XTreeDB {
 		}
 	}
 
+	/**
+	 * 添加一个单词到词典。
+	 *
+	 * @param string    $word
+	 * @param float|int $tf
+	 * @param float|int $idf
+	 * @param string    $attr
+	 *
+	 * @return bool
+	 */
+	public function addWord($word, $tf, $idf, $attr) {
+		$rec = [];
+		$k   = (ord($word[0]) + ord($word[1])) & 0x3f;
+
+		$rec [ $k ]                    = [$word => []];
+		$rec [ $k ] [ $word ] ['tf']   = floatval($tf);
+		$rec [ $k ] [ $word ] ['idf']  = floatval($idf);
+		$rec [ $k ] [ $word ] ['attr'] = $attr;
+
+		$len = mb_strlen($word);
+		while ($len > 2) {
+			$len  -= 1;
+			$temp = mb_substr($word, 0, $len);
+			if (!isset ($rec [ $k ] [ $temp ])) {
+				$rec [ $k ] [ $temp ] = [];
+			}
+			$rec [ $k ] [ $temp ] ['part'] = 1;
+		}
+
+		foreach ($rec [ $k ] as $w => $v) {
+			$flag = (isset ($v ['tf']) ? 0x01 : 0);
+			if (isset ($v ['part'])) {
+				$flag |= 0x02;
+			}
+			$data = pack('ffCa3', $v ['tf'], $v ['idf'], $flag, $v ['attr']);
+			$this->Put($w, $data);
+		}
+
+		return true;
+	}
+
 	// Open the database: read | write
-	function Open($fpath, $mode = 'r') {
+	public function Open($fpath, $mode = 'r') {
 		// open the file
 		$this->Close();
 
@@ -162,7 +198,7 @@ class XTreeDB {
 	}
 
 	// Insert Or Update the value
-	function Put($key, $value) {
+	public function Put($key, $value) {
 		// check the file description
 		if (!$this->fd || $this->mode != 'w') {
 			trigger_error("XDB::Put(), null db handler or readonly.", E_USER_WARNING);

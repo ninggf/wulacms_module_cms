@@ -20,7 +20,7 @@
             <tr>
                 <th width="50">NO.</th>
                 {foreach $cols as $id=> $col}
-                    <th>{$col}({$id})</th>
+                    <th>{$col}</th>
                 {/foreach}
             </tr>
             </thead>

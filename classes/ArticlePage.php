@@ -11,6 +11,7 @@
 namespace cms\classes;
 
 use cms\classes\model\CmsPage;
+use cms\tag\model\CmsTag;
 use wulaphp\app\App;
 use wulaphp\io\Response;
 
@@ -158,7 +159,8 @@ class ArticlePage extends ModelDoc {
 			if ($pageInfo->total < $pageInfo->page) {
 				Response::respond(404);
 			} else {
-				$page['content']  = $contents[ $pageInfo->page - 1 ];
+				$page['content'] = CmsTag::useTag($contents[ $pageInfo->page - 1 ]);
+				//使用内链
 				$page['contents'] = $contents;
 			}
 		}

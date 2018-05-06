@@ -117,7 +117,31 @@ class CmsSettingForm extends FormTable {
 	 * @layout 60,col-xs-4
 	 */
 	public $descCnt = 255;
-
+	/**
+	 * 启用内链
+	 * @var \backend\form\CheckboxField
+	 * @type bool
+	 * @layout 70,col-xs-2
+	 */
+	public $tagEnabled;
+	/**
+	 *
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @digits
+	 * @note   每页最多内链数
+	 * @layout 70,col-xs-4
+	 */
+	public $tags_count = 10;
+	/**
+	 *
+	 * @var \backend\form\TextField
+	 * @type int
+	 * @digits
+	 * @note   每个标签最多替换次数(0表示全部替换)
+	 * @layout 70,col-xs-6
+	 */
+	public $tag_count = 0;
 	/**
 	 * 文件存储器
 	 * @var \backend\form\TextField

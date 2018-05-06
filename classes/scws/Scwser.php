@@ -51,10 +51,13 @@ class Scwser {
 					} else {
 						$scws1 = scws_new();
 						$scws1->set_charset('utf8');
-						@$scws1->set_dict($dict);
+						if (preg_match('/.+\.txt$/i', $dict)) {
+							@$scws1->set_dict($dict, SCWS_XDICT_TXT);
+						} else {
+							@$scws1->set_dict($dict);
+						}
 						$attr = 'nk';
-						$scws1->set_multi(SCWS_MULTI_NONE);
-
+						$scws1->set_multi(15);
 						$keywords = self::doit($scws1, $string, $count, $attr);
 						$scws1->close();
 
@@ -62,7 +65,7 @@ class Scwser {
 					}
 				}
 			} else {
-				$scws->set_multi(15);
+				return [];
 			}
 			$keywords = self::doit($scws, $string, $count, $attr);
 		}

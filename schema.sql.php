@@ -191,7 +191,7 @@ $tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block` (
     UNIQUE INDEX `UDX_PN` (`name` ASC , `page` ASC)
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='页面区块'";
 
-$tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block_items` (
+$tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block_item` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `block_id` INT UNSIGNED NOT NULL COMMENT '所在区块',
     `pn` VARCHAR(49) NOT NULL COMMENT '区块名称',
@@ -215,3 +215,17 @@ $tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block_items` (
     INDEX `FK_BLOCKID` (`block_id` ASC),
     INDEX `UDX_PN` (`pn` ASC)
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='区块内容'";
+
+$tables ['1.2.0'] [] = "CREATE TABLE `{prefix}cms_tag` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `create_time` int(10) unsigned NOT NULL,
+  `create_uid` int(10) unsigned NOT NULL,
+  `update_time` int(10) unsigned NOT NULL,
+  `update_uid` int(10) unsigned NOT NULL,
+  `sort` int(10) unsigned NOT NULL DEFAULT 1,
+  `tag` varchar(16) NOT NULL COMMENT '标签',
+  `title` varchar(1024) NOT NULL COMMENT '标题',
+  `url` varchar(1024) NOT NULL COMMENT 'url',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UDX_TAG` (`tag`)
+) ENGINE=InnoDB DEFAULT CHARSET={encoding} COMMENT='内链标签库'";

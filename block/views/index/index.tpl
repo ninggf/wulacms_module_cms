@@ -15,16 +15,18 @@
                     </ul>
                 </div>
             </header>
-            <section class="scrollable w-f" id="blocks" data-load="{'cms/block/blocks'|app}" data-lazy
+            <section class="scrollable {if $canEdit}w-f{/if}" id="blocks" data-load="{'cms/block/blocks'|app}" data-lazy
                      data-loading-target="#blocks">
                 {include './blocks.tpl'}
             </section>
-            <footer class="footer bg-light b-t">
-                <a class="btn btn-success btn-sm pull-right edit-dialog" data-ajax="dialog"
-                   href="{'cms/block/edit'|app}" data-title="新的区块">
-                    <i class="fa fa-plus"></i> 新区块
-                </a>
-            </footer>
+            {if $canEdit}
+                <footer class="footer bg-light b-t">
+                    <a class="btn btn-success btn-sm pull-right edit-dialog" data-ajax="dialog"
+                       href="{'cms/block/edit'|app}" data-title="新的区块">
+                        <i class="fa fa-plus"></i> 新区块
+                    </a>
+                </footer>
+            {/if}
         </section>
     </aside>
     <section>
@@ -36,20 +38,21 @@
                             <i class="fa fa-list"></i>
                             <span id="m-name">未选择区块</span>
                         </button>
-                        <a class="act btn btn-sm btn-success edit-item hidden" data-ajax="dialog" data-title="新的条目">
-                            <i class="fa fa-plus"></i> 添加条目
-                        </a>
+                        {if $canEdit}
+                            <a class="act btn btn-sm btn-success edit-item hidden" data-ajax="dialog" data-title="新的条目">
+                                <i class="fa fa-plus"></i> 添加条目
+                            </a>
+                        {/if}
+                        {if $canDel}
                         <a href="{'cms/block/item/del'|app}" data-ajax data-grp="#table tbody input.grp:checked"
                            data-confirm="你真的要删除这些条目吗？" data-warn="请选择要删除的条目" class="btn btn-danger btn-sm"><i
-                                    class="fa fa-trash"></i> 删除</a>
+                                    class="fa fa-trash"></i> 删除</a>{/if}
                     </div>
-                    <div class="col-xs-3 m-b-xs">
+                    <div class="col-xs-3 m-b-xs text-right">
                         <form class="form-inline" data-table-form="#table">
                             <div class="input-group input-group-sm">
                                 <input type="hidden" name="blockid" value="" id="blockid"/>
-                                <input type="text" name="q" class="input-sm form-control" placeholder="{'Search'|t}"
-                                       data-toggle="tooltip" data-placement="bottom"
-                                       title="<p class='text-left'>可用查询:<br/>1.标题，如'标题' % 你好%<br/>2.副标题<br/>3.作者,来源,标签,属性<br/>4.url</p>"/>
+                                <input type="text" name="q" class="input-sm form-control" placeholder="{'Search'|t}"/>
                                 <span class="input-group-btn">
                                     <button class="btn btn-sm btn-info" id="btn-do-search" type="submit">Go!</button>
                                 </span>
@@ -60,14 +63,14 @@
             </header>
             <section class="w-f">
                 <div class="table-responsive">
-                    <table id="table" data-auto data-table="{'cms/block/item/data'|app}" data-sort="id,d"
+                    <table id="table" data-auto data-table="{'cms/block/item/data'|app}" data-sort="sort,a"
                            style="min-width: 800px">
                         <thead>
                         <tr>
                             <th width="30">
-                                <input type="checkbox" class="grp"/>
+                                <input type="checkbox" class="grp" title=""/>
                             </th>
-                            <th width="180" data-sort="pn,a">区块</th>
+                            <th width="180">区块</th>
                             <th>标题</th>
                             <th width="120">副标题</th>
                             <th width="120">图片</th>
@@ -86,7 +89,7 @@
     </section>
 </section>
 <script type="text/javascript">
-	layui.use(['jquery', 'bootstrap', 'wulaui', 'clipboard'], function ($, b, ui, cb) {
+	layui.use(['jquery', 'bootstrap', 'wulaui', 'clipboard'], function ($, b, ui) {
 		$('body').on('click', '.filter-page', function () {
 			var pn = $(this).data('name');
 			$('#page-name').text(pn);
@@ -130,6 +133,19 @@
 				}).submit();
 				return false;
 			};
+		}).on('change', 'input.sort', function () {
+			var sort = $(this).val();
+			if (!/^\d+$/.test(sort)) {
+				$(this).val(999);
+				ui.toast.warning(sort + '不是一个有效的排序值');
+			} else {
+				$.get(ui.app('cms/block/item/csort'), {
+					id  : $(this).data('id'),
+					sort: sort
+				}, function () {
+
+				}, 'json');
+			}
 		});
 	});
 </script>

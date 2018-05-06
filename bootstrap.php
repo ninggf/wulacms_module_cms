@@ -37,6 +37,7 @@ class CmsModule extends CmfModule {
 	public function getVersionList() {
 		$v['1.0.0'] = '初始版本';
 		$v['1.1.0'] = '添加页面区块功能';
+		$v['1.2.0'] = '添加标签内链功能';
 
 		return $v;
 	}
@@ -80,7 +81,13 @@ class CmsModule extends CmfModule {
 					$block->icon        = '&#xe61a;';
 					$block->data['url'] = App::url('cms/block');
 				}
-
+				if ($passport->cando('m:site/tag')) {
+					$block              = $site->getMenu('tag', '内链标签', 950);
+					$block->icon        = '&#xe64c;';
+					$block->iconCls     = 'layui-icon';
+					$block->iconStyle   = 'color:#4cc0c1;';
+					$block->data['url'] = App::url('cms/tag');
+				}
 				if ($passport->cando('m:site/model')) {
 					$model              = $site->getMenu('model', '内容模型', 999);
 					$model->icon        = '&#xe705;';
@@ -91,8 +98,8 @@ class CmsModule extends CmfModule {
 
 				if ($passport->cando('dm:site/page')) {
 					$domain              = $site->getMenu('domain', '网站域名', 1000);
-					$domain->icon        = '&#xe64c;';
-					$domain->iconCls     = 'layui-icon';
+					$domain->icon        = '&#xe617;';
+					$domain->iconStyle   = 'color:#dff0d8;';
 					$domain->data['url'] = App::url('cms/domain');
 				}
 			}
@@ -129,6 +136,11 @@ class CmsModule extends CmfModule {
 		$acl = $manager->getResource('site/block', '页面区块', 'm');
 		$acl->addOperate('edit', '编辑');
 		$acl->addOperate('del', '删除');
+
+		$acl = $manager->getResource('site/tag', '内链标签', 'm');
+		$acl->addOperate('edit', '编辑');
+		$acl->addOperate('del', '删除');
+		$acl->addOperate('dict', '生成词典');
 
 		$acl = $manager->getResource('site/model', '模型管理', 'm');
 		$acl->addOperate('edit', '编辑');
@@ -197,6 +209,9 @@ class CmsModule extends CmfModule {
 	*/
 	protected function bind() {
 		bind('cms\onCatagoryPagePublished', '&\cms\classes\Catagory');
+		if (defined('WULACMF_INSTALLED')) {
+			bind('artisan\getCommands', '&\cms\classes\cmd\StorageMigrateCommand');
+		}
 	}
 }
 

@@ -28,11 +28,13 @@ class IndexController extends IFramePageController {
 	use JQueryValidatorController;
 
 	public function index() {
-		$blockm         = new CmsBlock();
-		$pages          = $blockm->select('page')->groupBy('page')->sort('page', 'a')->toArray();
-		$data['pages']  = $pages;
-		$blocks         = $blockm->select('id,page,name')->sort('page', 'a')->toArray();
-		$data['blocks'] = $blocks;
+		$blockm          = new CmsBlock();
+		$pages           = $blockm->select('page')->groupBy('page')->sort('page', 'a')->toArray();
+		$data['pages']   = $pages;
+		$blocks          = $blockm->select('id,page,name')->sort('page', 'a')->toArray();
+		$data['blocks']  = $blocks;
+		$data['canEdit'] = $this->passport->cando('edit:site/block');
+		$data['canDel']  = $this->passport->cando('del:site/block');
 
 		return $this->render($data);
 	}
@@ -59,6 +61,12 @@ class IndexController extends IFramePageController {
 		return view($data);
 	}
 
+	/**
+	 * @param string $id
+	 *
+	 * @return \wulaphp\mvc\view\SmartyView
+	 * @acl edit:site/block
+	 */
 	public function edit($id = '') {
 		$data = ['id' => $id];
 		$form = new CmsBlockForm();
@@ -86,6 +94,12 @@ class IndexController extends IFramePageController {
 		return $data;
 	}
 
+	/**
+	 * @param string $id
+	 *
+	 * @return \wulaphp\mvc\view\JsonView
+	 * @acl edit:site/block
+	 */
 	public function savePost($id = '') {
 		$form  = new CmsBlockForm();
 		$block = $form->inflate();
@@ -109,6 +123,12 @@ class IndexController extends IFramePageController {
 		return Ajax::error('保存区块时出错了，请联系管理员');
 	}
 
+	/**
+	 * @param $id
+	 *
+	 * @return \wulaphp\mvc\view\JsonView
+	 * @acl del:site/block
+	 */
 	public function del($id) {
 		$id = intval($id);
 		if (!$id) {

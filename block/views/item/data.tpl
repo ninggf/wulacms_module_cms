@@ -23,17 +23,21 @@
             {/if}
         </td>
         <td>{$row.num},{$row.num1},{$row.num2}</td>
-        <td>{$row.sort}</td>
+        <td>
+            <input data-id="{$row.id}" type="text" class="sort input-s-sm" style="width:100%" value="{$row.sort}"/>
+        </td>
         <td>
             <div class="btn-group">
+                {if $canEdit}
                 <a href="{'cms/block/item/edit'|app}/{$row.id}/{$row.block_id}" title="编辑"
                    class="btn btn-xs btn-primary edit-item" data-ajax="dialog">
                     <i class="fa fa-pencil-square-o"></i>
-                </a>
+                </a>{/if}
+                {if $canDel}
                 <a href="{'cms/block/item/del'|app}/{$row.id}" class="btn btn-xs btn-danger" data-ajax
                    data-confirm="你真的要删除该条目吗?">
                     <i class="fa fa-trash-o"></i>
-                </a>
+                </a>{/if}
             </div>
         </td>
     </tr>

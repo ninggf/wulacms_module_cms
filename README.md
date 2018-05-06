@@ -30,3 +30,16 @@
    ```php
    return ['host'=>'localhost','port'=>6379,'db'=>0,'auth'=>'','timeout'=>5];
    ```
+## 文件存储器
+wulacms内置了两个文件存储器：
+1. file - 基于本地文件系统
+    * 配置参数: path - 存储路径
+2. ssdb - 基于SSDB数据库
+    * 配置参数: host - 主机; port - 端口; timeout - 超时(单位秒)。
+   
+> 注: 各参数使用';'分隔.
+>   
+> 例如使用ssdb做为存储,配置如下:
+>
+> ssdb:host=127.0.0.1;port=8888;timeout=10
+

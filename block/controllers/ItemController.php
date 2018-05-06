@@ -74,6 +74,19 @@ class ItemController extends BackendController {
 		return Ajax::error('保存条目时出错了，请联系管理员');
 	}
 
+	public function csort($id, $sort) {
+		$id   = intval($id);
+		$sort = intval($sort);
+
+		$blockItem = new CmsBlockItem();
+		$db        = $blockItem->db();
+
+		$db->update('{cms_block_item}')->set(['sort' => $sort])->where(['id' => $id])->exec();
+
+		return Ajax::reload('#table');
+
+	}
+
 	public function del($ids) {
 		$ids = safe_ids2($ids);
 		if (empty($ids)) {
@@ -115,11 +128,13 @@ class ItemController extends BackendController {
 		}
 		$q = $model->select();
 
-		$q->where($where)->page()->sort();
+		$q->where($where)->page()->sort('pn', 'a')->sort();
 		if ($count) {
 			$data['total'] = $q->total('id');
 		}
-		$data['rows'] = $q->toArray();
+		$data['rows']    = $q->toArray();
+		$data['canEdit'] = $this->passport->cando('edit:site/block');
+		$data['canDel']  = $this->passport->cando('del:site/block');
 
 		return view($data);
 	}
