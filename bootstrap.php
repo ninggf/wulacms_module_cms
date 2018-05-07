@@ -66,7 +66,7 @@ class CmsModule extends CmfModule {
 	 */
 	public static function initUI(DashboardUI $ui) {
 		$passport = whoami('admin');
-		if ($passport->cando('m:sitem')) {
+		if ($passport->cando('m:site')) {
 			$site1       = $ui->getMenu('site', '我的网站', 1);
 			$site1->icon = '&#xe617;';
 			$site        = $site1->getMenu('cms', '我的网站', 1);
