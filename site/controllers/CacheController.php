@@ -32,9 +32,9 @@ class CacheController extends IFramePageController {
 	 * @throws
 	 */
 	public function clear($ids, $type = '') {
-		$ids    = safe_ids2($ids);
 		$cacher = Cache::getCache();
 		if ($ids) {
+			$ids = safe_ids2($ids);
 			if ($type) {//清空全部缓存
 				$tq  = new TaskQueue();
 				$ids = implode(',', $ids);
