@@ -229,3 +229,14 @@ $tables ['1.2.0'] [] = "CREATE TABLE `{prefix}cms_tag` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `UDX_TAG` (`tag`)
 ) ENGINE=InnoDB DEFAULT CHARSET={encoding} COMMENT='内链标签库'";
+
+$tables['1.2.1'][] = "ALTER TABLE {prefix}`cms_block` 
+ADD COLUMN `pn` VARCHAR(49) NULL COMMENT '区块引用ID' AFTER `name`";
+
+$tables['1.2.1'][] = "UPDATE {prefix}`cms_block` SET `pn` = CONCAT(`page`,':',`name`)";
+
+$tables['1.3.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_cache` (
+    `page_id` INT UNSIGNED NOT NULL COMMENT '页面ID',
+    `cid` CHAR(32) NOT NULL COMMENT '缓存KEY',
+    UNIQUE INDEX `UDX_PID_CID` (`page_id` ASC , `cid` ASC)
+)  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='缓存表'";

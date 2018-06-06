@@ -98,6 +98,34 @@ class CmsDispatcher implements IURLDispatcher {
 	}
 
 	/**
+	 * 记录缓存
+	 *
+	 * @param string $cid
+	 */
+	public static function recordCacheInfo($cid) {
+		try {
+			$db   = App::db();
+			$info = Router::getRouter()->getParsedInfo();
+			$url  = $info->parsedUrl;
+			if ($url) {
+				if ($url == 'index.html') {
+					$page_id = 0;
+				} else {
+					$rt = $db->queryOne('SELECT id FROM {cms_router} WHERE route = %s', md5($url));
+					if ($rt && $rt['id']) {
+						$page_id = $rt['id'];
+					} else {
+						$page_id = 0;
+					}
+				}
+				$db->cud('INSERT INTO {cms_cache} (page_id,cid) VALUES (%d,%s)', $page_id, $cid);
+			}
+		} catch (\Exception $e) {
+
+		}
+	}
+
+	/**
 	 * 静态页面.
 	 *
 	 * @param string        $route

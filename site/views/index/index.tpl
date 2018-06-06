@@ -92,7 +92,14 @@
                                 </li>
                                 <li class="act btn1 btn2">
                                     <a id="cc-ch-all" data-ajax data-confirm="你确定要清空栏目(包括子栏目)的缓存吗?">
-                                        <i class="fa fa-eraser text-warning"></i> 清空全部缓存
+                                        <i class="fa fa-eraser text-warning"></i> 清空栏目缓存
+                                    </a>
+                                </li>
+                                <li class="divider act btn0 btn1 btn2"></li>
+                                <li class="showx act btn0 btn1 btn2">
+                                    <a id="cc-idx" data-ajax href="{'cms/site/cache/clear'|app}/0"
+                                       data-confirm="你确定要清空首页(包括路由页)的缓存吗?">
+                                        <i class="fa fa-eraser text-warning"></i> 清空首页缓存
                                     </a>
                                 </li>
                             {/if}
@@ -167,6 +174,13 @@
                                     </button>
                                 </div>
                             {/if}
+                            {if $canClearCC}
+                                <div class="inline act btn1">
+                                    <button class="btn btn-default" id="btn-ccache">
+                                        <i class="fa fa-eraser"></i>清缓存
+                                    </button>
+                                </div>
+                            {/if}
                         </div>
                     </div>
                     <div class="col-xs-3 m-b-xs text-right">
@@ -198,8 +212,8 @@
     <script type="text/javascript">
 		layui.use(['jquery', 'ztree', 'bootstrap', 'wulaui', 'cms.main'], function ($, z, b, wulaui, cm) {
 			$('[data-toggle="tooltip"]').tooltip({
-				html:true
-            });
+				html: true
+			});
 			cm.init({$canMgCh},{$modelGridCols|json_encode});
 		});
     </script>

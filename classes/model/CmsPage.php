@@ -30,12 +30,13 @@ SELECT
     CPF.*,
     CPV.data_file,
     CM.name AS model_name,CM.refid AS model_id,CM.flags AS model_flags,
-	CCH.title2 AS channel_name,CCH.title AS channel_title,
+	CCH.title2 AS channel_name,CCH.title AS channel_title,CHP.url AS channel_url,
     CCHM.template_file AS default_page_tpl,
     CCHM.template_file2 AS list_page_tpl
 FROM {cms_router} AS CR 
 LEFT JOIN {cms_page} AS CP ON CP.id = CR.id
 LEFT JOIN {cms_page_field} AS CPF ON CP.id = CPF.page_id
+LEFT JOIN {cms_page} AS CHP ON CHP.id = CPF.channel
 LEFT JOIN {cms_model} AS CM ON CP.model = CM.id 
 LEFT JOIN {cms_page_field} AS CCH ON CPF.channel = CCH.page_id
 LEFT JOIN {cms_channel_model} AS CCHM ON (CP.model = CCHM.model AND CCHM.page_id = CPF.channel)
@@ -254,13 +255,13 @@ SQL;
 	/**
 	 * 将页面放入回收站.
 	 *
-	 * @param string|int $id
-	 * @param string|int $ver
-	 * @param mixed      $error
+	 * @param string|int $id    页面ID
+	 * @param string|int $ver   要删除的版本
+	 * @param mixed      $error 错误信息
 	 *
 	 * @return bool
 	 */
-	public function deletePage($id, $ver, &$error = null) {
+	public function deletePage($id, $ver = '', &$error = null) {
 		$id = intval($id);
 		if (!$id) {
 			$error = '页面ID为空';

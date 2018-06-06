@@ -103,13 +103,13 @@ class ItemController extends BackendController {
 
 	public function q($q) {
 		$data['more'] = false;
-		$blockm       = new CmsBlockItem();
+		$blockm       = new CmsBlock();
 		if ($q) {
-			$results = $blockm->select('pn AS id,pn AS text')->groupBy('block_id')->where(['pn %' => "%$q%"])->toArray(null, null, [
+			$results = $blockm->select('pn AS id,pn AS text')->where(['pn %' => "%$q%"])->toArray(null, null, [
 				['id' => $q, 'text' => $q]
 			]);
 		} else {
-			$results = $blockm->select('pn AS id,pn AS text')->groupBy('block_id')->toArray();
+			$results = $blockm->select('pn AS id,pn AS text')->limit(0, 15)->toArray();
 		}
 		$data['results'] = $results;
 

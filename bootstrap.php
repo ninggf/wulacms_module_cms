@@ -38,6 +38,8 @@ class CmsModule extends CmfModule {
 		$v['1.0.0'] = '初始版本';
 		$v['1.1.0'] = '添加页面区块功能';
 		$v['1.2.0'] = '添加标签内链功能';
+		$v['1.2.1'] = '为表cms_block添加pn字段';
+		$v['1.3.0'] = '添加表:cms_cache';
 
 		return $v;
 	}
@@ -204,9 +206,30 @@ class CmsModule extends CmfModule {
 		return $ds;
 	}
 
-	/*
+	/**
+	 * @param string $cid
+	 *
+	 * @bind on_page_cached
+	 */
+	public static function onPageCached($cid) {
+		CmsDispatcher::recordCacheInfo($cid);
+	}
+
+	/**
+	 * @param array $tasks
+	 *
+	 * @bind system\registerTask
+	 * @return array
+	 */
+	public static function regTask($tasks) {
+		$tasks['cms\classes\task\ClearCacheTask'] = '清空缓存';
+
+		return $tasks;
+	}
+
+	/**
 	 * provide hook to template
-	*/
+	 */
 	protected function bind() {
 		bind('cms\onCatagoryPagePublished', '&\cms\classes\Catagory');
 		if (defined('WULACMF_INSTALLED')) {

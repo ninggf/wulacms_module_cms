@@ -37,7 +37,7 @@
                     <th width="60" data-sort="is_default,d">默认</th>
                     <th width="60">https</th>
                     <th width="80">模板目录</th>
-                    <th width="80"></th>
+                    <th width="100"></th>
                 </tr>
                 </thead>
             </table>

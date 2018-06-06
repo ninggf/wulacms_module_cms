@@ -104,6 +104,25 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 					wulaui.toast.warning('请选择要还原的内容');
 				}
 			});
+			$('#btn-ccache').on('click', function () {
+				let selected = table.checkStatus('grid'), ids = [];
+				if (selected.data.length > 0) {
+					$(selected.data).each((i, e) => {
+						ids.push(e.page_id);
+					});
+					if (ids.length > 0) {
+						wulaui.ajax.confirm({
+							url    : wulaui.app('cms/site/cache/clear'),
+							element: $(this),
+							data   : {
+								ids: ids.join(',')
+							}
+						}, '你真要清空所选内容的缓存吗?', {loading: true});
+					}
+				} else {
+					wulaui.toast.warning('请选择要清空缓存的内容');
+				}
+			});
 			//下线操作-放入草稿箱
 			$('#btn-unpub').on('click', function () {
 				let selected = table.checkStatus('grid'), ids = [];

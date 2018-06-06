@@ -37,11 +37,19 @@ class PageDatasource extends CtsDataSource {
 			$query->join('{cms_page} AS CHP', 'CPF.channel = CHP.id');
 			//必须是已经发布的
 			$id                  = aryget('id', $con);
+			$lt                  = aryget('lt', $con);//大，下一篇
+			$gt                  = aryget('gt', $con);//小，上一篇
 			$where               = new Condition();
 			$where['CPF.status'] = 1;
 			//页面编号
 			if ($id) {
 				$where['CPF.page_id IN'] = safe_ids2($id);
+			}
+			if ($lt) {
+				$where['CPF.page_id <'] = intval($lt);
+			}
+			if ($gt) {
+				$where['CPF.page_id >'] = intval($gt);
 			}
 			//内容模型
 			$model    = aryget('model', $con);
@@ -147,8 +155,8 @@ class PageDatasource extends CtsDataSource {
 			'id'           => 'ID',
 			'model_name'   => '模型',
 			'channel_name' => '栏目',
-			'title'       => '标题',
-			'title2'        => '副标题'
+			'title'        => '标题',
+			'title2'       => '副标题'
 		];
 	}
 }
@@ -204,7 +212,7 @@ class PageDatasourceForm extends FormTable {
 	 * @type string
 	 * @layout 10,col-xs-8
 	 * @see    param
-	 * @data   n=无&id=ID&cmts=评论次数&view=查看次数&dig=顶&dig1=踩&publish_time=发布时间&create_time=创建时间&update_time=更新时间
+	 * @data   n=无&page_id=ID&cmts=评论次数&view=查看次数&dig=顶&dig1=踩&publish_time=发布时间&create_time=创建时间&update_time=更新时间
 	 */
 	public $sort;
 	/**

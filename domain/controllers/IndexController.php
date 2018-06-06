@@ -78,6 +78,15 @@ class IndexController extends IFramePageController {
 		}
 	}
 
+	public function cc($theme) {
+		if ($theme) {
+			@rmdirs(TMP_PATH . 'themes_c' . DS . $theme);
+			@rmdirs(TMP_PATH . 'themes_cache' . DS . $theme);
+		}
+
+		return Ajax::success('模板缓存已删除');
+	}
+
 	public function del($id) {
 		if (!$id) {
 			return Ajax::error('参数错误啦!哥!');

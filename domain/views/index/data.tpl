@@ -25,8 +25,12 @@
                    data-title="编辑『{$row.domain|escape}』" class="btn btn-xs btn-primary edit-admin">
                     <i class="fa fa-pencil-square"></i>
                 </a>
+                <a href="{'cms/domain/cc'|app}/{$row.theme}" data-confirm="你真的要清空模板缓存吗?" data-ajax
+                   class="btn btn-xs btn-warning">
+                    <i class="fa fa-eraser"></i>
+                </a>
                 <a href="{'cms/domain/del'|app}/{$row.id}" data-confirm="你真的要删除?" data-ajax
-                   class="btn btn-xs btn-danger edit-admin">
+                   class="btn btn-xs btn-danger">
                     <i class="fa fa-trash-o"></i>
                 </a>
             </div>
