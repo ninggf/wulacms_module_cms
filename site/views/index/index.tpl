@@ -210,7 +210,7 @@
         </script>
     {/foreach}
     <script type="text/javascript">
-		layui.use(['jquery', 'ztree', 'bootstrap', 'wulaui', 'cms.main'], function ($, z, b, wulaui, cm) {
+		layui.use(['jquery', 'bootstrap', 'wulaui', 'cms.main'], function ($, b, wulaui, cm) {
 			$('[data-toggle="tooltip"]').tooltip({
 				html: true
 			});
