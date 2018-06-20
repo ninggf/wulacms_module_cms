@@ -15,6 +15,7 @@ use cms\classes\StaticPage;
 use wula\cms\CmfModule;
 use wulaphp\app\App;
 use wulaphp\auth\AclResourceManager;
+use wulaphp\cache\Cache;
 
 /**
  * Class CmsModule
@@ -225,6 +226,22 @@ class CmsModule extends CmfModule {
 		$tasks['cms\classes\task\ClearCacheTask'] = '清空缓存';
 
 		return $tasks;
+	}
+
+	/**
+	 * @bind clear_idxc_cache
+	 * @throws
+	 */
+	public static function clearIndexCache() {
+		if (APP_MODE == 'pro') {
+			$cacher           = Cache::getCache();
+			$where['page_id'] = 0;
+			$db               = App::db();
+			$keys             = $db->select('cid')->from('{cms_cache}')->where($where);
+			foreach ($keys as $key) {
+				$cacher->delete($key['cid']);
+			}
+		}
 	}
 
 	/**
