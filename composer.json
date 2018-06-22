@@ -3,8 +3,7 @@
   "description": "CMS-内容管理系统",
   "type": "wula-module",
   "require": {
-	"wula/wula-installer": "^2.0",
-	"wula/cms-support": "*"
+	"wula/wula-installer": "^2.0"
   },
   "license": "MIT",
   "authors": [

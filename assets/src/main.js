@@ -383,7 +383,7 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 				let nd = targetNode.getParentNode();
 				nid    = nd ? nd.id : 0;
 			}
-			wulaui.ajax.get(wulaui.app('cms/site/channel/move/'), {
+			wulaui.ajax.get(wulaui.app('cms/site/channel/move'), {
 				cid : cid,
 				oid : oid,
 				nid : nid,

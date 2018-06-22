@@ -1,8 +1,5 @@
 import gulp from "gulp";
 import clean from "gulp-rimraf";
-import rename from "gulp-rename";
-import less from "gulp-less";
-import cssmin from "gulp-clean-css";
 
 import uglify from "gulp-uglify";
 import jsvalidate from "gulp-jsvalidate";
@@ -21,7 +18,6 @@ let options = minimist(process.argv.slice(2), knownOptions);
 gulp.task('clean', [], function () {
 	console.log("Clean all files in build folder");
 	return gulp.src([
-			"css/*.css",
 			'js/*.js'
 		], {read: false}
 	).pipe(clean());
@@ -32,17 +28,9 @@ gulp.task('default', ['build'], function () {
 });
 
 // 生成最终文件，并清空生成的中间文件.
-gulp.task('build', ['css', 'js'], function () {
+gulp.task('build', ['js'], function () {
 });
 
-// 编译less文件
-gulp.task('css', [], function () {
-	let ccss = gulp.src('less/cms.less').pipe(less()).pipe(gulp.dest('css'));
-	if (options.env === 'pro')
-		return ccss.pipe(cssmin())
-			//.pipe(rename({extname: '.min.css'}))
-			.pipe(gulp.dest('css'));
-});
 // 编译js文件
 gulp.task('js', [], function () {
 	let js = gulp.src([
@@ -52,16 +40,14 @@ gulp.task('js', [], function () {
 	}))
 		.pipe(jsvalidate())
 		.on('error', notify.onError(e => e.message))
-		.pipe(gulp.dest('js'));
+		.pipe(gulp.dest('.'));
 
 	if (options.env === 'pro')
 		return js.pipe(uglify())
-			//.pipe(rename({ extname: '.min.js' }))
-			.pipe(gulp.dest('js'));
+			.pipe(gulp.dest('.'));
 });
 
 gulp.task('watch', ['build'], function () {
 	options.env = 'dev';
-	gulp.watch(['less/**'], ['css']);
 	gulp.watch(['src/**'], ['js']);
 });

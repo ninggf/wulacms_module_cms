@@ -1,8 +1,13 @@
+.gitignore export-ignore
+.gitattributes export-ignore
 tests/ export-ignore
 phpunit.xml export-ignore
+
 assets/src/ export-ignore
 assets/less/   export-ignore
 assets/package.json export-ignore
 assets/gulpfile.babel.js export-ignore
 assets/.babelrc export-ignore
 assets/css/ export-ignore
+
+composer.json merge=ours

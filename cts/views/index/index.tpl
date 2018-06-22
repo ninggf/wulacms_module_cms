@@ -36,7 +36,7 @@
 			group.find('li').not(mp).removeClass('active');
 			mp.addClass('active');
 
-			$('#data-preview').data('load', "{'cms/cts/preview/'|app}" + rid).reload();
+			$('#data-preview').data('load', "{'cms/cts/preview'|app}/" + rid).reload();
 			return false;
 		}).on('click', '.copy-cts', function () {
 			var code = $('#cts-code').text();
