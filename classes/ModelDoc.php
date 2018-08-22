@@ -172,10 +172,10 @@ abstract class ModelDoc {
 		$passport = whoami('admin');
 		$btns     = [];
 		if ($passport->cando('edit:site/page')) {
-			$btns[0] = '<a href="' . App::url('cms/site/page/edit/') . '" data-tab="&#xe653;" class="btn btn-xs btn-primary" lay-event="edit" data-title="编辑页面[{page_id}]"><i class="fa  fa-pencil-square-o"></i></a>';
+			$btns[0] = '<a href="' . App::url('cms/site/page/edit') . '/" data-tab="&#xe653;" class="btn btn-xs btn-primary" lay-event="edit" data-title="编辑页面[{page_id}]"><i class="fa  fa-pencil-square-o"></i></a>';
 		}
 		if ($passport->cando('del:site/page')) {
-			$btns[20] = '<a href="' . App::url('cms/site/page/del/') . '" data-ajax data-confirm="你真的要删除该内容吗?" data-title="删除确认" class="btn btn-xs btn-danger" lay-event="del"><i class="fa fa-trash-o"></i></a>';
+			$btns[20] = '<a href="' . App::url('cms/site/page/del') . '/" data-ajax data-confirm="你真的要删除该内容吗?" data-title="删除确认" class="btn btn-xs btn-danger" lay-event="del"><i class="fa fa-trash-o"></i></a>';
 		}
 
 		return $btns;

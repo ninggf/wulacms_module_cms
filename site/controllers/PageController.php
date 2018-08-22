@@ -405,6 +405,10 @@ class PageController extends IFramePageController {
 		if (!$ids) {
 			return Ajax::warn('没要下线的内容');
 		}
+		$approveEnabled = App::bcfg('approveEnabled@cms', false);
+		if (!$approveEnabled) {
+			return Ajax::warn('审核机制未开启');
+		}
 		$table = new CmsPage();
 
 		$table->uid = $this->passport->uid;

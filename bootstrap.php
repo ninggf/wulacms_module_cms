@@ -174,7 +174,7 @@ class CmsModule extends CmfModule {
 	 * @return array
 	 */
 	public static function regLayuims($ms) {
-		$ms['cms.main'] = '{/}' . App::res('cms/assets/js/main');
+		$ms['cms.main'] = '{/}' . App::res('cms/main');
 
 		return $ms;
 	}

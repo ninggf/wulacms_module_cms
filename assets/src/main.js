@@ -229,7 +229,14 @@ layui.define(['jquery', 'ztree.edit', 'bootstrap', 'table', 'wulaui'], (exports)
 				limit       : 20,
 				limits      : [10, 20, 30, 40, 50],
 				text        : {
-					none: '无数据啊'
+					none: '暂无数据'
+				},
+				done        : function (res, curr, count) {
+					if (curr <= 1 && count === 0) {
+						$('#table-wraper').show();
+					} else {
+						$('#table-wraper').hide();
+					}
 				}
 			});
 			//排序

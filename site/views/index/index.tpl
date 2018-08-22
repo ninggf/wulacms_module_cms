@@ -154,7 +154,7 @@
                                     </div>
                                 {/if}
                             {/if}
-                            {if $canPublish}
+                            {if $canPublish && $approveEnabled}
                                 <div class="inline act btn1">
                                     <button class="ps btn btn-primary s1" id="btn-publish">
                                         <i class="fa fa-cloud-upload"></i>发布
@@ -199,6 +199,10 @@
             </header>
             <section id="has-grid">
                 <table class="layui-table" id="content-grid" lay-filter="grid"></table>
+                <div id="table-wraper"
+                     style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: #fff">
+                    <p class="text-muted text-lg text-center m-t-lg">无数据</p>
+                </div>
             </section>
         </section>
     </section>
