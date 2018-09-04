@@ -200,7 +200,7 @@
             <section id="has-grid">
                 <table class="layui-table" id="content-grid" lay-filter="grid"></table>
                 <div id="table-wraper"
-                     style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: #fff">
+                     style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: #fff;z-index: 999">
                     <p class="text-muted text-lg text-center m-t-lg">无数据</p>
                 </div>
             </section>

@@ -1,6 +1,7 @@
 <tbody data-total="{$total}" class="wulaui">
 {foreach $rows as $row}
-    <tr>
+    <tr rel="d-{$row.id}">
+        <td></td>
         <td>
             <input type="checkbox" value="{$row.id}" class="grp"/>
         </td>
@@ -21,7 +22,7 @@
         <td>{$row.theme}</td>
         <td class="text-right">
             <div class="btn-group">
-                <a href="{'cms/domain/edit'|app}/{$row.id}" data-ajax="dialog" data-area="700px,500px"
+                <a href="{'cms/domain/edit'|app}/{$row.id}" data-ajax="dialog" data-area="800px,600px"
                    data-title="编辑『{$row.domain|escape}』" class="btn btn-xs btn-primary edit-admin">
                     <i class="fa fa-pencil-square"></i>
                 </a>
@@ -36,9 +37,16 @@
             </div>
         </td>
     </tr>
+    <tr parent="d-{$row.id}">
+        <td colspan="4"></td>
+        <td colspan="8">
+            <label class="label bg-success m-l-xs">{$row.domain}</label>
+            {if $row.domains}{$row.domains|trim|replace:"\n":','}{/if}
+        </td>
+    </tr>
     {foreachelse}
     <tr>
-        <td colspan="11" class="text-center">暂无相关数据!</td>
+        <td colspan="12" class="text-center">无</td>
     </tr>
 {/foreach}
 </tbody>

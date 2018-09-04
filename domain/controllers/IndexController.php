@@ -22,78 +22,80 @@ use wulaphp\validator\ValidateException;
  * @acl     dm:site/page
  */
 class IndexController extends IFramePageController {
-	public function index() {
-		return $this->render();
-	}
+    public function index() {
+        return $this->render();
+    }
 
-	public function data($q = '', $count = '') {
-		$model = new CmsDomainForm();
-		$where = [];
-		if ($q) {
-			$where['domain LIKE'] = '%' . $q . '%';
-		}
-		$query = $model->select('*')->where($where)->page()->sort();
-		$rows  = $query->toArray();
-		$total = '';
-		if ($count) {
-			$total = $query->total('id');
-		}
-		$data['rows']  = $rows;
-		$data['total'] = $total;
+    public function data($q = '', $count = '') {
+        $model = new CmsDomainForm();
+        $where = ['pid' => 0];
+        if ($q) {
+            $w1['domain %']    = '%' . $q . '%';
+            $w1['||domains %'] = '%' . $q . '%';
+            $where[]           = $w1;
+        }
+        $query = $model->select('*')->where($where)->page()->sort();
+        $rows  = $query->toArray();
+        $total = '';
+        if ($count) {
+            $total = $query->total('id');
+        }
+        $data['rows']  = $rows;
+        $data['total'] = $total;
 
-		return view($data);
-	}
+        return view($data);
+    }
 
-	public function edit($id = '') {
-		$form = new CmsDomainForm(true);
-		if ($id) {
-			$query  = $form->get($id);
-			$domain = $query->get(0);
-			$form->inflateByData($domain);
-		}
-		$data['form']  = BootstrapFormRender::v($form);
-		$data['id']    = $id;
-		$data['rules'] = $form->encodeValidatorRule($this);
+    public function edit($id = '') {
+        $form = new CmsDomainForm(true);
+        if ($id) {
+            $query  = $form->get($id);
+            $domain = $query->get(0);
+            $form->inflateByData($domain);
+        }
+        $data['form']  = BootstrapFormRender::v($form);
+        $data['id']    = $id;
+        $data['rules'] = $form->encodeValidatorRule($this);
 
-		return view($data);
-	}
+        return view($data);
+    }
 
-	public function savePost($id) {
-		$form = new CmsDomainForm(true);
-		$data = $form->inflate();
-		try {
-			$form->validate();
-			if ($id) {
-				$res = $form->updateDomain($id, $data);
-			} else {
-				$res = $form->indsertDomain($data);
-			}
-			if ($res) {
-				return Ajax::reload('#core-admin-table', $id ? '修改成功' : '新域名已经成功创建');
-			} else {
-				return Ajax::error('操作失败了');
-			}
-		} catch (ValidateException $ve) {
-			return Ajax::validate('SettingForm', $ve->getErrors());
-		}
-	}
+    public function savePost($id) {
+        $form = new CmsDomainForm(true);
+        $data = $form->inflate();
+        try {
+            $form->validate();
+            if ($id) {
+                $res = $form->updateDomain($id, $data);
+            } else {
+                $res = $form->newDomain($data);
+            }
+            if ($res) {
+                return Ajax::reload('#core-admin-table', $id ? '修改成功' : '新域名已经成功创建');
+            } else {
+                return Ajax::error('操作失败了');
+            }
+        } catch (ValidateException $ve) {
+            return Ajax::validate('SettingForm', $ve->getErrors());
+        }
+    }
 
-	public function cc($theme) {
-		if ($theme) {
-			@rmdirs(TMP_PATH . 'themes_c' . DS . $theme);
-			@rmdirs(TMP_PATH . 'themes_cache' . DS . $theme);
-		}
+    public function cc($theme) {
+        if ($theme) {
+            @rmdirs(TMP_PATH . 'themes_c' . DS . $theme);
+            @rmdirs(TMP_PATH . 'themes_cache' . DS . $theme);
+        }
 
-		return Ajax::success('模板缓存已删除');
-	}
+        return Ajax::success('模板缓存已删除');
+    }
 
-	public function del($id) {
-		if (!$id) {
-			return Ajax::error('参数错误啦!哥!');
-		}
-		$form = new CmsDomainForm();
-		$res  = $form->delDomain($id);
+    public function del($id) {
+        if (!$id) {
+            return Ajax::error('参数错误啦!哥!');
+        }
+        $form = new CmsDomainForm();
+        $res  = $form->delDomain($id);
 
-		return Ajax::reload('#core-admin-table', $res ? '删除成功' : '删除失败');
-	}
+        return Ajax::reload('#core-admin-table', $res ? '删除成功' : '删除失败');
+    }
 }

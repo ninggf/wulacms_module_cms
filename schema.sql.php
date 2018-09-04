@@ -194,7 +194,7 @@ $tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block` (
 $tables['1.1.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_block_item` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `block_id` INT UNSIGNED NOT NULL COMMENT '所在区块',
-    `pn` VARCHAR(49) NOT NULL COMMENT '区块名称',
+    `pn` VARCHAR(64) NOT NULL COMMENT '区块名称',
     `title` VARCHAR(64) NULL COMMENT '标题',
     `title2` VARCHAR(64) NULL COMMENT '副标题',
     `url` VARCHAR(256) NULL COMMENT '链接地址',
@@ -231,7 +231,7 @@ $tables ['1.2.0'] [] = "CREATE TABLE `{prefix}cms_tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET={encoding} COMMENT='内链标签库'";
 
 $tables['1.2.1'][] = "ALTER TABLE {prefix}`cms_block` 
-ADD COLUMN `pn` VARCHAR(49) NULL COMMENT '区块引用ID' AFTER `name`";
+ADD COLUMN `pn` VARCHAR(64) NULL COMMENT '区块引用ID' AFTER `name`";
 
 $tables['1.2.1'][] = "UPDATE {prefix}`cms_block` SET `pn` = CONCAT(`page`,':',`name`)";
 
@@ -240,3 +240,11 @@ $tables['1.3.0'][] = "CREATE TABLE IF NOT EXISTS `{prefix}cms_cache` (
     `cid` CHAR(32) NOT NULL COMMENT '缓存KEY',
     UNIQUE INDEX `UDX_PID_CID` (`page_id` ASC , `cid` ASC)
 )  ENGINE=INNODB DEFAULT CHARACTER SET={encoding} COMMENT='缓存表'";
+
+//添加网站绑定多域名功能
+$tables['2.0.2'][] = "ALTER TABLE `{prefix}cms_domain` 
+ADD COLUMN `pid` INT(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '主站ID' AFTER `id`";
+
+$tables['2.0.2'][] = "ALTER TABLE `{prefix}cms_domain` 
+ADD COLUMN `domains` TEXT NULL COMMENT '绑定的域名' AFTER `offline`";
+

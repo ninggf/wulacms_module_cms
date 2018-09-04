@@ -3,8 +3,8 @@
         <div class="row m-t-sm">
             <div class="col-sm-6 m-b-xs">
                 <a href="{'cms/domain/edit'|app}" class="btn btn-sm btn-success edit-admin" data-ajax="dialog"
-                   data-area="700px,500px" data-title="新的域名">
-                    <i class="fa fa-plus"></i> 添加域名
+                   data-area="800px,600px" data-title="新的网站">
+                    <i class="fa fa-plus"></i> 添加网站
                 </a>
             </div>
             <div class="col-sm-6 m-b-xs text-right">
@@ -22,9 +22,10 @@
     <section class="w-f bg-white">
         <div class="table-responsive">
             <table id="core-admin-table" data-auto data-table="{'cms/domain/data'|app}" data-sort="is_default,d"
-                   style="min-width: 800px">
+                   style="min-width: 800px" data-tree>
                 <thead>
                 <tr>
+                    <th width="20"></th>
                     <th width="20">
                         <input type="checkbox" class="grp"/>
                     </th>
