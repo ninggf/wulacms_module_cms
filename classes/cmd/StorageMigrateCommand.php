@@ -10,9 +10,9 @@
 
 namespace cms\classes\cmd;
 
-use wula\cms\Storage;
 use wulaphp\app\App;
 use wulaphp\artisan\ArtisanCommand;
+use wulaphp\io\Storage;
 
 /**
  * 存储迁移命令.

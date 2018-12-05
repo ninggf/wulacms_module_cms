@@ -71,7 +71,7 @@ class CmsModule extends CmfModule {
     public static function initUI(DashboardUI $ui) {
         $passport = whoami('admin');
         if ($passport->cando('m:site')) {
-            $site1       = $ui->getMenu('site', '我的网站', 1);
+            $site1       = $ui->getMenu('site', '网站', 1);
             $site1->icon = '&#xe617;';
             $site        = $site1->getMenu('cms', '我的网站', 1);
             $site->icon  = '&#xe617;';
@@ -166,18 +166,6 @@ class CmsModule extends CmfModule {
         $models['static']   = new StaticPage();//静态模板页
 
         return $models;
-    }
-
-    /**
-     * @param array $ms
-     *
-     * @filter wula\jqadmin\reg_module
-     * @return array
-     */
-    public static function regLayuims($ms) {
-        $ms['cms.main'] = '{/}' . App::res('cms/main');
-
-        return $ms;
     }
 
     /**

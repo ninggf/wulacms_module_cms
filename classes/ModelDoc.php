@@ -294,7 +294,7 @@ abstract class ModelDoc {
      * @return array
      */
     protected function commonData(&$data) {
-        $page['noindex']     = intval(aryget('noindex', $data['noindex'], 0));
+        $page['noindex']     = intval(aryget('noindex', $data, 0));
         $page['expire']      = intval($data['expire']);
         $page['channel']     = $data['channel']['chid'];
         $page['model']       = $data['model']['id'];

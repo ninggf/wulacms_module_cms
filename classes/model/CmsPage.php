@@ -4,12 +4,12 @@ namespace cms\classes\model;
 
 use cms\classes\ModelDoc;
 use cms\classes\Pinyin;
-use wula\cms\Storage;
 use wulaphp\app\App;
 use wulaphp\db\DatabaseConnection;
 use wulaphp\db\Table;
 use wulaphp\io\Ajax;
 use wulaphp\io\Request;
+use wulaphp\io\Storage;
 
 class CmsPage extends Table {
 	public $uid = 0;
