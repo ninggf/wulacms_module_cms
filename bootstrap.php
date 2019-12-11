@@ -21,6 +21,7 @@ use wulaphp\cache\Cache;
  * Class CmsModule
  * @package cms
  * @group   cms
+ * @subEnabled
  */
 class CmsModule extends CmfModule {
     public function getName() {

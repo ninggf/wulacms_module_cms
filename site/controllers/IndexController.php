@@ -13,6 +13,8 @@ namespace cms\site\controllers;
 use backend\classes\IFramePageController;
 use cms\classes\ModelDoc;
 use wulaphp\app\App;
+use wulaphp\io\Response;
+use wulaphp\mvc\controller\UploadSupport;
 
 /**
  * Class IndexController
@@ -20,6 +22,8 @@ use wulaphp\app\App;
  * @acl     m:site/page
  */
 class IndexController extends IFramePageController {
+    use UploadSupport;
+
     /**
      * 首页
      * @return \wulaphp\mvc\view\View
@@ -35,9 +39,10 @@ class IndexController extends IFramePageController {
         $data['modelGridCols']  = $gridCfg[0];
         $data['modelToolbars']  = $gridCfg[1];
         $data['approveEnabled'] = App::bcfg('approveEnabled@cms');
-        $data['cmsMainModule']  = '{/}' . App::res('cms/main');
+        $data['cmsMainModule']  = '{/}' . App::res('cms/assets/main');
 
-        return $this->render($data)->addStyle(App::res('cms/style.css'));
+        //->addStyle(App::res('cms/assets/style.css'));
+        return $this->render($data);
     }
 
     /**
@@ -75,5 +80,14 @@ class IndexController extends IFramePageController {
         }
 
         return [];
+    }
+
+    public function uploadImg() {
+        Response::respond(503);
+        $rst = $this->upload(null, 1000000, true, null, function ($w, $h) {
+            return $w != $h ? true : '图片尺寸不对';
+        });
+
+        return $rst;
     }
 }

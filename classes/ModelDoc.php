@@ -17,7 +17,6 @@ use backend\form\FileUploaderField;
 use backend\form\HiddenField;
 use backend\form\MultipleCheckboxFiled;
 use backend\form\PasswordField;
-use backend\form\Plupload;
 use backend\form\RadioField;
 use backend\form\SelectField;
 use backend\form\TextareaField;
@@ -27,10 +26,11 @@ use backend\form\WysiwygField;
 use cms\classes\form\DefaultPageForm;
 use cms\classes\model\CmsPage;
 use cms\classes\scws\Scwser;
-use media\classes\ImageTool;
-use media\Media1Module;
+use media\MediaModule;
 use wulaphp\app\App;
 use wulaphp\db\sql\Condition;
+use wulaphp\io\Uploader;
+use wulaphp\util\ImageTool;
 
 /**
  * 内容模型加载器.
@@ -327,10 +327,10 @@ abstract class ModelDoc {
 
         //下载远程图片
         if (isset($data['content']) && $data['content'] && $data['img_auto_dld']) {
-            $exclude_urls = Media1Module::get_media_domains([WWWROOT_DIR]);
-            if (class_exists('\media\classes\ImageTool') && $exclude_urls && $exclude_urls[0] != WWWROOT_DIR) {
+            $exclude_urls = MediaModule::get_media_domains([WWWROOT_DIR]);
+            if ($exclude_urls && $exclude_urls[0] != WWWROOT_DIR) {
                 $content  = $data ['content'];
-                $uploader = Plupload::getUploader();
+                $uploader = Uploader::getUploader();
                 foreach ($exclude_urls as $k => $eurl) {
                     $exclude_urls[ $k ] = parse_url($eurl, PHP_URL_HOST);
                 }
