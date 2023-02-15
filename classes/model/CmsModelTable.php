@@ -23,7 +23,7 @@ class CmsModelTable extends Table {
 	 *
 	 * @return bool
 	 */
-	public function updateModel($id, $data) {
+	public function updateModel($id, array $data): bool {
 		return $this->update($data, $id);
 	}
 
@@ -34,7 +34,7 @@ class CmsModelTable extends Table {
 	 *
 	 * @return bool|int
 	 */
-	public function newModel($data) {
+	public function newModel(array $data) {
 		return $this->insert($data);
 	}
 
@@ -45,7 +45,7 @@ class CmsModelTable extends Table {
 	 *
 	 * @return bool
 	 */
-	public function deleteModel($ids) {
+	public function deleteModel(array $ids): bool {
 		if ($ids) {
 			$refids = $this->get(['id IN' => $ids], 'refid')->toArray('refid');
 			foreach ($refids as $refid) {
@@ -65,7 +65,7 @@ class CmsModelTable extends Table {
 	 *
 	 * @return array
 	 */
-	public function getFlags($refid) {
+	public function getFlags(string $refid): array {
 		$flags = $this->get(['refid' => $refid], 'flags')->get('flags');
 		if ($flags) {
 			$flags  = explode(',', $flags);

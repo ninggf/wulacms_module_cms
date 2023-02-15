@@ -3,7 +3,7 @@
         <div class="row m-t-sm">
             <div class="col-sm-6 m-b-xs">
                 <a href="{'cms/model/edit'|app}" class="btn btn-sm btn-success edit" data-ajax="dialog"
-                   data-area="600px,350px" data-title="新的模型">
+                   data-area="400px,300px" data-title="新的模型">
                     <i class="fa fa-plus"></i> 添加模型
                 </a>
             </div>

@@ -8,7 +8,7 @@
         <td>{$row.flags}</td>
         <td class="text-right">
             <div class="btn-group">
-                <a href="{'cms/model/edit'|app}/{$row.id}" data-ajax="dialog" data-area="600px,350px"
+                <a href="{'cms/model/edit'|app}/{$row.id}" data-ajax="dialog" data-area="400px,300px"
                    data-title="编辑『{$row.name|escape}』" class="btn btn-xs btn-primary edit">
                     <i class="fa fa-pencil-square"></i>
                 </a>

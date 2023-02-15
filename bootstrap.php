@@ -72,7 +72,7 @@ class CmsModule extends CmfModule {
     public static function initUI(DashboardUI $ui) {
         $passport = whoami('admin');
         if ($passport->cando('m:site')) {
-            $site1       = $ui->getMenu('site', '网站', 1);
+            $site1       = $ui->getMenu('site', '我的网站', 1);
             $site1->icon = '&#xe617;';
             $site        = $site1->getMenu('cms', '我的网站', 1);
             $site->icon  = '&#xe617;';
@@ -170,6 +170,18 @@ class CmsModule extends CmfModule {
     }
 
     /**
+     * @param array $ms
+     *
+     * @filter wula\jqadmin\reg_module
+     * @return array
+     */
+    public static function regLayuims($ms) {
+        $ms['cms.main'] = '{/}' . App::res('cms/main');
+
+        return $ms;
+    }
+
+    /**
      * @param $settings
      *
      * @return mixed
@@ -237,11 +249,13 @@ class CmsModule extends CmfModule {
     /**
      * provide hook to template
      */
-    protected function bind() {
-        bind('cms\onCatagoryPagePublished', '&\cms\classes\Catagory');
+    protected function bind(): ?array {
+        bind('cms\onCatagoryPagePublished', '&\cms\classes\Catagory', 10, 2);
         if (defined('WULACMF_INSTALLED')) {
             bind('artisan\getCommands', '&\cms\classes\cmd\StorageMigrateCommand');
         }
+
+        return null;
     }
 }
 

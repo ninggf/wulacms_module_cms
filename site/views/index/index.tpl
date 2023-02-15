@@ -214,13 +214,11 @@
         </script>
     {/foreach}
     <script type="text/javascript">
-        layui.extend({
-            'cms.main': '{$cmsMainModule}'
-        }).use(['jquery', 'bootstrap', 'wulaui', 'cms.main'], function ($, b, wulaui, cm) {
-            $('[data-toggle="tooltip"]').tooltip({
-                html: true
-            });
-            cm.init({$canMgCh},{$modelGridCols|json_encode});
-        });
+		layui.use(['jquery', 'bootstrap', 'wulaui', 'cms.main'], function ($, b, wulaui, cm) {
+			$('[data-toggle="tooltip"]').tooltip({
+				html: true
+			});
+			cm.init({$canMgCh},{$modelGridCols|json_encode});
+		});
     </script>
 </section>
