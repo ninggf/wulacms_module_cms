@@ -99,7 +99,7 @@ SQL;
      *
      * @return bool|int 新页面ID或false.
      */
-    public function newPage(&$data, &$error = null) {
+    public function newPage(array &$data, &$error = null) {
         if (!$data) {
             $error = '数据为空';
 
@@ -118,7 +118,17 @@ SQL;
         }, ARRAY_FILTER_USE_KEY);
 
         if (!$page || empty($page['url']) || empty($page['model']) || empty($page['path'])) {
-            $error = '页面数据不完整';
+            if ($page) {
+                if (empty($page['url'])) {
+                    $error = '生成URL失败，请填写URL或配置URL生成规则';
+                } else if (empty($page['model'])) {
+                    $error = '未识别的页面模型';
+                } else if (empty($page['path'])) {
+                    $error = '栏目存储路径未配置，请配置栏目的存储路径';
+                }
+            } else {
+                $error = '未获取到页面数据，无法保存';
+            }
 
             return false;
         }

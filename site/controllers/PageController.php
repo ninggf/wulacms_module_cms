@@ -285,7 +285,7 @@ class PageController extends IFramePageController {
 				if (!$rst) {
 					$error = $doc->last_error();
 					if (is_string($error)) {
-						return Ajax::error($error ? $error : '未知错误');
+						return Ajax::error($error ?: '未知错误');
 					} else if ($error instanceof View) {
 						return $error;
 					} else {
